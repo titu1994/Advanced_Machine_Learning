@@ -17,7 +17,7 @@ def load_Q1_data():
 
     Xi = np.array(Xi, dtype=np.float64).reshape((100, 128))
     Wj = np.array(Wj, dtype=np.float64).reshape((26, 128))
-    Tij = np.array(Tij, dtype=np.float64).reshape((26, 26)).transpose()
+    Tij = np.array(Tij, dtype=np.float64).reshape((26, 26), order='F').transpose()
 
     print("Xi", Xi.shape, "Wj", Wj.shape, "Tij", Tij.shape)
     return Xi, Wj, Tij
