@@ -1,17 +1,24 @@
 from sklearn.datasets.svmlight_format import load_svmlight_file
+import numpy as np
 
-Q1_TRAIN_PATH = "data/train.txt"
-Q1_TEST_PATH = "data/test.txt"
+Q1_TRAIN_PATH = "data/decode_input.txt"
 
 
 def load_Q1_data():
-    X_train, y_train = load_svmlight_file(Q1_TRAIN_PATH)
-    X_test, y_test = load_svmlight_file(Q1_TEST_PATH)
+    with open(Q1_TRAIN_PATH, 'r') as f:
+        lines = f.readlines()
 
-    return X_train, y_train, X_test, y_test
+    Xi = lines[:100*128]
+    Wj = lines[100*128:26*128 + 100*128]
+    Tij = lines[26*128 + 100*128:]
+
+    Xi = np.array(Xi, dtype=np.float64).reshape((128, 100)).T
+    Wj = np.array(Wj, dtype=np.float64).reshape((128, 26)).T
+    Tij = np.array(Tij, dtype=np.float64).reshape((26, 26)).transpose()
+
+    print(Xi.shape, Wj.shape, Tij.shape)
+    return Xi, Wj, Tij
 
 
 if __name__ == '__main__':
-    X_train, y_train, X_test, y_test = load_Q1_data()
-
-    print(X_train.shape, y_train.shape, X_test.shape, y_test.shape)
+    load_Q1_data()
