@@ -9,3 +9,9 @@ def load_Q1_data():
     X_test, y_test = load_svmlight_file(Q1_TEST_PATH)
 
     return X_train, y_train, X_test, y_test
+
+
+if __name__ == '__main__':
+    X_train, y_train, X_test, y_test = load_Q1_data()
+
+    print(X_train.shape)
