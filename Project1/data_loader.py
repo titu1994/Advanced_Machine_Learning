@@ -14,4 +14,4 @@ def load_Q1_data():
 if __name__ == '__main__':
     X_train, y_train, X_test, y_test = load_Q1_data()
 
-    print(X_train.shape)
+    print(X_train.shape, y_train.shape, X_test.shape, y_test.shape)
