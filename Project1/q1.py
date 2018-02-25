@@ -31,6 +31,10 @@ def brute_force():
     return predictions, confidence
 
 
+def max_sum_algorithm():
+    pass
+
+
 if __name__ == '__main__':
     preds, confidence = brute_force()
 
