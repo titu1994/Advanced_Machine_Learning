@@ -12,16 +12,16 @@ def brute_force():
     y_hat = np.zeros((m, num_labels), dtype=np.float32)
 
     # compute <W_yj, Xj>
-    wx_sum = np.zeros((26,), dtype=np.float32)
+    wx_sum = np.zeros((m, 26,), dtype=np.float32)
     for j in range(m):
         for y_j in range(num_labels):
-            wx_sum[y_j] += np.dot(X[j], W[y_j].T)
+            wx_sum[j, y_j] += np.dot(X[j], W[y_j].T)
 
 
-    t_sum = np.zeros((26,), dtype=np.float32)
+    t_sum = np.zeros((m, 26,), dtype=np.float32)
     for j in range(m):
         for y_j in range(num_labels - 1):
-                t_sum[y_j] += Tij[y_j, y_j + 1]
+                t_sum[j, y_j] += Tij[y_j, y_j + 1]
 
     y_hat += wx_sum + t_sum
 
