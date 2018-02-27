@@ -86,12 +86,12 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     WORD_CV_SCORES.append(word_acc)
 
 
-def plot_scores(X_range):
+def plot_scores(X_range, scale='log'):
     plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
     plt.title('Character level accuracy')
     plt.legend()
     plt.xlabel('C')
-    plt.xscale('log')
+    if scale is not None: plt.xscale(scale)
     plt.xticks(X_range)
     plt.ylabel('accuracy')
     plt.show()
@@ -100,7 +100,7 @@ def plot_scores(X_range):
     plt.title('Word level accuracy')
     plt.legend()
     plt.xlabel('C')
-    plt.xscale('log')
+    if scale is not None: plt.xscale(scale)
     plt.xticks(X_range)
     plt.ylabel('accuracy')
     plt.show()
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     # NOTE: The values for C are inverted, as Scikit-Learn uses
     # an inverse C value. Larger values in liblinear = smaller values
     # in scikit-learn.
-    limits = [500, 1000, 1500, 2000]  # [1.0, 10.0, 100.0, 1000.0]
+    limits = [0, 500, 1000, 1500, 2000]  # [1.0, 10.0, 100.0, 1000.0]
 
     # Used for getting maximum test scores at word and character level
     # Cs = [1.0]
@@ -162,6 +162,6 @@ if __name__ == '__main__':
     for limit in limits:
         train_evaluate_linear_svm(C=1.0, transform_trainset=True, limit=limit)
 
-    plot_scores(limits)
+    plot_scores(limits, scale=None)
 
 

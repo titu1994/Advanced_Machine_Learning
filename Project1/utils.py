@@ -124,6 +124,7 @@ def _translation(Xi, offsets):
                                                                max(0, 1 - y_offset): min(x_width, x_width - y_offset)]
 
     y[x_offset: x_height, y_offset: x_width] = Xi[0: x_height - x_offset, 0: x_width - y_offset]
+
     return y
 
 
