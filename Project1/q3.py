@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-paper')
 
+from Project1.data_loader import load_Q2_data
 from utils import evaluate_structured
 
 struct_model_path = "data/model_trained.txt"
@@ -44,7 +45,11 @@ def evaluate_svm_struct_model():
 
 if __name__ == '__main__':
 
+    # Used for grid search and plotting
     Cs = [1.0, 10.0, 100.0, 1000.0] # [1.0, 10.0, 100.0, 1000.0]
+
+    # Used for getting maximum test scores at word and character level
+    #Cs = [1000.0]
 
     for C in Cs:
         train_svm_struct_model(C=C)

@@ -1,4 +1,4 @@
-from sklearn.datasets.svmlight_format import load_svmlight_file
+from collections import OrderedDict
 import numpy as np
 import re
 import matplotlib.pyplot as plt
@@ -8,7 +8,6 @@ plt.style.use('seaborn-paper')
 Q1_TRAIN_PATH = "data/decode_input.txt"
 Q2_MODEL_PATH = "data/model.txt"
 Q2_TRAIN_PATH = "data/train.txt"
-train_data = {}
 
 def load_Q1_data():
     with open(Q1_TRAIN_PATH, 'r') as f:
@@ -37,6 +36,8 @@ def load_Q2_model():
     return Wj, Tij
     
 def load_Q2_data():
+    train_data = OrderedDict()
+
     with open(Q2_TRAIN_PATH, 'r') as f:
         lines = f.readlines()
     for l in lines:
