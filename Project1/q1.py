@@ -76,4 +76,7 @@ if __name__ == '__main__':
         print("i=%d : Predicted = %s (objective = %0.2f)" % (i + 1, chr(p + ord('a')), o))
 
     print("Maximum objective score : ", objective.max())
-    print(max_sum_decoder())
+
+    max_sum_preds = max_sum_decoder()
+    for i,p in enumerate(max_sum_preds):
+        print("i=%d : Predicted = %s" %(i+1, chr(p + ord('a'))))
