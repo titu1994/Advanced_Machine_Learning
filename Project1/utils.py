@@ -47,3 +47,39 @@ def evaluate_structured(f_true, f_pred):
         print("Word level accuracy : %0.4f (%d / %d)" % (word_acc, word_correct_count, len(true_word_list)))
 
         return char_acc, word_acc
+
+
+def evaluate_crf(y_true, y_preds, word_ids):
+    true_word_list = []
+    pred_word_list = []
+
+    prev_word = -100
+
+    for i, (true, pred) in enumerate(zip(y_true, y_preds)):
+        true_word = int(word_ids[i])
+        if true_word == prev_word:
+            true_word_list[-1].append(true)
+            pred_word_list[-1].append(pred)
+        else:
+            true_word_list.append([true])
+            pred_word_list.append([pred])
+            prev_word = true_word
+
+    char_correct_count = 0
+    word_correct_count = 0
+
+    for true_char, pred_char in zip(y_true, y_preds):
+        if true_char == pred_char:
+            char_correct_count += 1
+
+    for true_word, pred_word in zip(true_word_list, pred_word_list):
+        if np.array_equal(true_word, pred_word):
+            word_correct_count += 1
+
+    char_acc = (char_correct_count) / float(y_true.shape[0])
+    word_acc = float(word_correct_count) / float(len(true_word_list))
+
+    print("Character level accuracy : %0.4f (%d / %d)" % (char_acc, char_correct_count, y_true.shape[0]))
+    print("Word level accuracy : %0.4f (%d / %d)" % (word_acc, word_correct_count, len(true_word_list)))
+
+    return char_acc, word_acc

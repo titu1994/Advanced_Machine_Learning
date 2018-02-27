@@ -1,4 +1,3 @@
-liblinear
 numpy
 scipy
 scikit-learn
