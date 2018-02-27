@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.svm import LinearSVC
 
 from data_loader import load_Q2_data
-from Project1.utils import evaluate_structured, evaluate_crf, transform_dataset
+from utils import evaluate_structured, evaluate_crf, transform_dataset
 
 struct_model_path = "data/model_trained.txt"
 struct_test_predictions_path = "data/test_predictions.txt"
