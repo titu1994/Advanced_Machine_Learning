@@ -1,4 +1,4 @@
-from sklearn.datasets.svmlight_format import load_svmlight_file
+from collections import OrderedDict
 import numpy as np
 import re
 import matplotlib.pyplot as plt
@@ -8,7 +8,7 @@ plt.style.use('seaborn-paper')
 Q1_TRAIN_PATH = "data/decode_input.txt"
 Q2_MODEL_PATH = "data/model.txt"
 Q2_TRAIN_PATH = "data/train.txt"
-train_data = {}
+Q2_TEST_PATH = "data/test.txt"
 
 def load_Q1_data():
     with open(Q1_TRAIN_PATH, 'r') as f:
@@ -37,6 +37,8 @@ def load_Q2_model():
     return Wj, Tij
     
 def load_Q2_data():
+    train_data = OrderedDict()
+
     with open(Q2_TRAIN_PATH, 'r') as f:
         lines = f.readlines()
     for l in lines:
@@ -53,10 +55,34 @@ def load_Q2_data():
         # get pos for current letter
         pos = l[3]
         # get pixel values (i, j) for current letter
-        p_ij = np.array(l[4:])
+        p_ij = np.array(l[4:], dtype=np.float32)
         # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
-        train_data.update({letter_id: [letter, next_id, word_id, pos, p_ij]})
-    return train_data
+        train_data[letter_id] = [letter, next_id, word_id, pos, p_ij]
+
+    test_data = OrderedDict()
+
+    with open(Q2_TEST_PATH, 'r') as f:
+        lines = f.readlines()
+
+    for l in lines:
+        # get letter
+        letter = re.findall(r'[a-z]', l)
+        # get all ints
+        l = re.findall(r'\d+', l)
+        # store letter_id (unique id)
+        letter_id = l[0]
+        # store next letter id
+        next_id = l[1]
+        # get current word id
+        word_id = l[2]
+        # get pos for current letter
+        pos = l[3]
+        # get pixel values (i, j) for current letter
+        p_ij = np.array(l[4:], dtype=np.float32)
+        # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
+        test_data[letter_id] = [letter, next_id, word_id, pos, p_ij]
+
+    return train_data, test_data
 
 if __name__ == '__main__':
     Xi, Wj, Tij = load_Q1_data()
