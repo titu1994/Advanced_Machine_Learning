@@ -86,11 +86,11 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     WORD_CV_SCORES.append(word_acc)
 
 
-def plot_scores(X_range, scale='log'):
+def plot_scores(X_range, scale='log', xlabel='C'):
     plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
     plt.title('Character level accuracy')
     plt.legend()
-    plt.xlabel('C')
+    plt.xlabel(xlabel)
     if scale is not None: plt.xscale(scale)
     plt.xticks(X_range)
     plt.ylabel('accuracy')
@@ -99,7 +99,7 @@ def plot_scores(X_range, scale='log'):
     plt.plot(X_range, WORD_CV_SCORES, label='word-level acc')
     plt.title('Word level accuracy')
     plt.legend()
-    plt.xlabel('C')
+    plt.xlabel(xlabel)
     if scale is not None: plt.xscale(scale)
     plt.xticks(X_range)
     plt.ylabel('accuracy')
@@ -162,6 +162,6 @@ if __name__ == '__main__':
     for limit in limits:
         train_evaluate_linear_svm(C=1.0, transform_trainset=True, limit=limit)
 
-    plot_scores(limits, scale=None)
+    plot_scores(limits, scale=None, xlabel='distortion count')
 
 
