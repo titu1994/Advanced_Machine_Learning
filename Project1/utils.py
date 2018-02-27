@@ -1,4 +1,9 @@
 import numpy as np
+from scipy.misc import imrotate
+from collections import defaultdict
+
+TRANSFORM_PATH = "data/transform.txt"
+
 
 def evaluate_structured(f_true, f_pred):
     with open(f_true, 'r') as f_true, open(f_pred, 'r') as f_pred:
@@ -83,3 +88,83 @@ def evaluate_crf(y_true, y_preds, word_ids):
     print("Word level accuracy : %0.4f (%d / %d)" % (word_acc, word_correct_count, len(true_word_list)))
 
     return char_acc, word_acc
+
+
+def _rotate(Xi, alpha):
+    Xi = Xi.reshape((16, 8))
+    alpha = float(alpha)
+
+    y = imrotate(Xi, angle=alpha)
+
+    x_height, x_width = Xi.shape
+    y_height, y_width = y.shape
+
+    from_x = int((y_height + 1 - x_height) // 2)
+    from_y = int((y_width + 1 - x_width) // 2)
+
+    y = y[from_x:from_x + x_height, from_y: from_y + x_width]
+
+    idx = np.where(y == 0)
+    y[idx] = Xi[idx]
+
+    return y
+
+
+def _translation(Xi, offsets):
+    Xi = Xi.reshape((16, 8))
+    x_height, x_width = Xi.shape
+
+    x_offset, y_offset = offsets
+    x_offset, y_offset = int(x_offset), int(y_offset)
+
+    y = Xi
+
+    y[max(0, x_offset): min(x_height, x_height + x_offset),
+      max(0, y_offset): min(x_width, x_width + y_offset)] = Xi[max(0, 1 - x_offset): min(x_height, x_height - x_offset),
+                                                               max(0, 1 - y_offset): min(x_width, x_width - y_offset)]
+
+    y[x_offset: x_height, y_offset: x_width] = Xi[0: x_height - x_offset, 0: x_width - y_offset]
+    return y
+
+
+def transform_dataset(train_set, limit):
+    if limit == 0:
+        return train_set
+
+    # build an inverse word dictionary
+    word_dict = defaultdict(list)
+
+    for key, value in train_set.items():
+        word_id = value[2]
+        word_dict[word_id].append(key)
+
+    with open(TRANSFORM_PATH, 'r') as f:
+        lines = f.readlines()
+
+    lines = lines[:limit]
+
+    for line in lines:
+        splits = line.split()
+        action = splits[0]
+        target_word = splits[1]
+        args = splits[2:]
+
+        # get all of the ids in train set which have this word in them
+        target_image_ids = word_dict[target_word]
+
+        for image_id in target_image_ids:
+            value_set = train_set[image_id]
+            image = value_set[-1]
+
+            if action == 'r':
+                alpha = args[0]
+                image = _rotate(image, alpha)
+            else:
+                offsets = args
+                image = _translation(image, offsets)
+
+            value_set[-1] = image.flatten()
+
+            train_set[image_id] = value_set
+
+    return train_set
