@@ -56,7 +56,7 @@ def load_Q2_data():
         # get pixel values (i, j) for current letter
         p_ij = np.array(l[4:])
         # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
-        train_data.update({letter_id: [letter, next_id, word_id, pos, p_ij]})
+        train_data[letter_id] = [letter, next_id, word_id, pos, p_ij]
     return train_data
 
 if __name__ == '__main__':
