@@ -52,8 +52,21 @@ def brute_force_vectorized():
     return predictions, objective_value
 
 
-def max_sum_algorithm():
-    pass
+def max_sum_decoder():
+    nodeweights = np.zeros([X.shape[0], W.shape[0]])
+    values = np.zeros([X.shape[0], W.shape[0]])
+    for j in range(W.shape[0]):
+        nodeweights[0, j] = np.dot(X[0], W[j])
+    values[0] = nodeweights[0].copy()
+    for i in range(1, X.shape[0]):
+        for j in range(W.shape[0]):
+            nodeweights[i, j] = np.dot(X[i], W[j])
+        for j in range(W.shape[0]):
+            for k in range(W.shape[0]):
+                val = values[i-1, k] + nodeweights[i, j] + Tij[k, j]
+                if values[i, j] < val:
+                    values[i, j] = val
+    return np.argmax(values, axis=1)
 
 
 if __name__ == '__main__':
@@ -63,3 +76,4 @@ if __name__ == '__main__':
         print("i=%d : Predicted = %s (objective = %0.2f)" % (i + 1, chr(p + ord('a')), o))
 
     print("Maximum objective score : ", objective.max())
+    print(max_sum_decoder())
