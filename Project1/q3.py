@@ -121,6 +121,9 @@ if __name__ == '__main__':
     #
     ''' Linear Multi-Class SVM '''
     # Used for grid search and plotting
+    # NOTE: The values for C are inverted, as Scikit-Learn uses
+    # an inverse C value. Larger values in liblinear = smaller values
+    # in scikit-learn.
     Cs = [1e-3, 1e-2, 1e-1, 1.0]  # [1.0, 10.0, 100.0, 1000.0]
 
     # Used for getting maximum test scores at word and character level
