@@ -31,7 +31,7 @@ with tf.Session() as sess:
     sequence = [chr(s + 65) for s in sequence]
 
     for i, s in enumerate(sequence):
-        print("i = %d : %s" % (i + 1, s))
+        print("i=%d : Predicted = %s" % (i + 1, s))
 
 
 
