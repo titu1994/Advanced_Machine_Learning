@@ -1,6 +1,6 @@
 import numpy as np
 
-from Project1.data_loader import load_Q1_data
+from data_loader import load_Q1_data
 
 X, W, Tij = load_Q1_data()
 
