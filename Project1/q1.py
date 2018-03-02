@@ -53,6 +53,7 @@ def brute_force_vectorized():
 
 
 def max_sum_decoder():
+    opt = np.zeros([X.shape[0], W.shape[0]], dtype=np.int32)
     nodeweights = np.zeros([X.shape[0], W.shape[0]])
     values = np.zeros([X.shape[0], W.shape[0]])
     for j in range(W.shape[0]):
@@ -63,20 +64,30 @@ def max_sum_decoder():
             nodeweights[i, j] = np.dot(X[i], W[j])
         for j in range(W.shape[0]):
             for k in range(W.shape[0]):
-                val = values[i-1, k] + nodeweights[i, j] + Tij[k, j]
+                val = values[i - 1, k] + nodeweights[i, j] + Tij[k, j]
                 if values[i, j] < val:
                     values[i, j] = val
-    return np.argmax(values, axis=1)
+                    opt[i, j] = k
+    k = np.argmax(nodeweights[X.shape[0] - 1])
+    predictions = np.zeros([X.shape[0]], dtype=np.int32)
+    predictions[X.shape[0] - 1] = k
+    for i in range(X.shape[0] - 1, 0, -1):
+        k = opt[i, k]
+        predictions[i - 1] = k
+
+    return predictions
 
 
 if __name__ == '__main__':
     preds, objective = brute_force_vectorized()
 
-    for i, (p, o) in enumerate(zip(preds, objective)):
-        print("i=%d : Predicted = %s (objective = %0.2f)" % (i + 1, chr(p + ord('a')), o))
+    # for i, (p, o) in enumerate(zip(preds, objective)):
+    #     print("i=%d : Predicted = %s (objective = %0.2f)" % (i + 1, chr(p + ord('a')), o))
 
-    print("Maximum objective score : ", objective.max())
+    preds_max_sum = max_sum_decoder()
 
-    max_sum_preds = max_sum_decoder()
-    for i,p in enumerate(max_sum_preds):
-        print("i=%d : Predicted = %s" %(i+1, chr(p + ord('a'))))
+    for i,p in enumerate(preds_max_sum):
+        print("i=%d : Predicted = %s" % (i+1, chr(p+ord('a'))))
+
+    # print("Maximum objective score : ", objective.max())
+    # print(max_sum_decoder())
