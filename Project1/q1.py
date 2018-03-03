@@ -60,8 +60,7 @@ def max_sum_decoder():
         nodeweights[0, j] = np.dot(X[0], W[j])
     values[0] = nodeweights[0].copy()
     for i in range(1, X.shape[0]):
-        for j in range(W.shape[0]):
-            nodeweights[i, j] = np.dot(X[i], W[j])
+        nodeweights[i] = np.dot(X[i], W.T)
         for j in range(W.shape[0]):
             for k in range(W.shape[0]):
                 val = values[i - 1, k] + nodeweights[i, j] + Tij[k, j]
