@@ -70,9 +70,52 @@ def load_Q2_data():
 
     return train_data, test_data
 
+def calculate_word_lengths(dataset):
+    word_list = []
+    prev_word = -100
+
+    for i, (key, value) in enumerate(dataset.items()):
+        letter, next_id, word_id, pos, p_ij = value
+
+        if word_id == prev_word:
+            word_list[-1] += 1
+        else:
+            word_list.append(1)
+            prev_word = word_id
+
+    return word_list
+
+def prepare_dataset(dataset, word_length_list):
+    max_length = max(word_length_list)
+    num_samples = len(word_length_list)
+
+    X = np.zeros((num_samples, max_length, 128), dtype='float32')
+    y = np.zeros((num_samples, max_length), dtype='int32')
+
+    dataset_pointer = 0
+    dataset_values = list(dataset.values())
+
+    for i in range(num_samples):
+        num_words = word_length_list[i]
+
+        for j in range(num_words):
+            letter, next_id, word_id, pos, p_ij = dataset_values[j + dataset_pointer]
+            X[i, j, :] = p_ij
+
+            letter_to_int = int(ord(letter[0]) - ord('a'))
+            y[i, j] = letter_to_int
+
+        dataset_pointer += num_words
+
+    return X, y
+
+
 if __name__ == '__main__':
-    Xi, Wj, Tij = load_Q1_data()
-    Wj_train, Tij_train = load_Q2_model()
-    letter_dict = load_Q2_data()
-    print(len(letter_dict))
+    #Xi, Wj, Tij = load_Q1_data()
+    #Wj_train, Tij_train = load_Q2_model()
+    train_set, test_set = load_Q2_data()
+    train_word_list = calculate_word_lengths(train_set)
+
+    print(max(train_word_list))
+
 
