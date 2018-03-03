@@ -42,11 +42,17 @@ def load_Q2_data():
     with open(Q2_TRAIN_PATH, 'r') as f:
         lines = f.readlines()
     for l in lines:
+        # get letter
         letter = re.findall(r'[a-z]', l)
+        # get all ints
         l = re.findall(r'\d+', l)
+        # store letter_id (unique id)
         letter_id = l[0]
+        # store next letter id
         next_id = l[1]
+        # get current word id
         word_id = l[2]
+        # get pos for current letter
         pos = l[3]
         p_ij = np.array(l[4:], dtype=np.float32)
         # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
