@@ -74,9 +74,11 @@ def backward_pass(X_train, Wj, Tij):
     print('backward_pass (s): ' + str(stop - start))
     return beta
 
+# FIX THIS! indexes and implement DP
 def conditional_prob(X_train, Wj, Tij):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
     dist[0,] = 1
+    start = timeit.default_timer()
     alpha = forward_pass(X_train, Wj, Tij)
     beta = backward_pass(X_train, Wj, Tij)
     for j in range(1, X_train.shape[0] - 1):
@@ -86,6 +88,8 @@ def conditional_prob(X_train, Wj, Tij):
             phi = np.exp(np.dot(X_train[j+1][1:], Wj[s]) + Tij[s, s+1])
             dist[j, s] = alpha_j_a * beta_j1_b * phi
     dist = dist / alpha
+    stop = timeit.default_timer()
+    print('conditional_prob (s): ' + str(stop - start))
     # result = open(r'dist.txt', 'w+')
     # for j in range(0, X_train.shape[0]):
     #     result.write('dist[' + str(j) + ']: ' + str([alpha[j, s] for s in range(1, Wj.shape[0])]) + '\n')
@@ -119,11 +123,15 @@ class my_thread(threading.Thread):
     def run(self):
         if self.p == 'fp':
             forward_pass(X_train, Wj, Tij)
-        else:
+        elif self.p == 'bp':
             backward_pass(X_train, Wj, Tij)
+        else:
+            conditional_prob(X_train, Wj, Tij)
 
-fp = my_thread(1, 'fp-thread', X_train, Wj, Tij, 'fp')
-bp = my_thread(2, 'bp-thread', X_train, Wj, Tij, 'bp')
-fp.start()
-bp.start()
-# conditional_prob(X_train, Wj, Tij)
+#fp = my_thread(1, 'fp-thread', X_train, Wj, Tij, 'fp')
+#bp = my_thread(2, 'bp-thread', X_train, Wj, Tij, 'bp')
+# cp = my_thread(3, 'cp-thread', X_train, Wj, Tij, 'cp')
+# cp.start()
+# fp.start()
+# bp.start()
+conditional_prob(X_train, Wj, Tij)
