@@ -113,8 +113,6 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     start = timeit.default_timer()
     gradient = np.zeros_like(Wj)  # (26, 128)
 
-    result = open(r'grad.txt', 'w')
-
     for j in range(X_train.shape[0]):
         y_delta = (y_train[j] - dist[j]).reshape((-1, 1))
         x_delta = X_train[j, 1:].reshape((1, -1))
@@ -123,6 +121,8 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     gradient /= len(X_train)
 
     flattened_gradient = gradient.flatten()
+
+    result = open(r'grad.txt', 'w')
     for g in flattened_gradient:
         result.write(str(g) + "\n")
     result.close()
@@ -130,12 +130,28 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     stop = timeit.default_timer()
     print('gradient_Wj (s): ' + str(stop - start))
 
-
-def gradient_Tij(dist, X_train, y_train, Wj, Tij):
+def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
     start = timeit.default_timer()
-    gradient = np.zeros_like(Tij)  # (26, 128)
+    gradient = np.zeros_like(Tij)  # (26, 26)
 
-    print(gradient.shape())
+    for j in range(X_train.shape[0] - 1):
+        for s1 in range(Wj.shape[0]):
+            for s2 in range(Wj.shape[0]):
+                indicator = y_train[j][s1] and y_train[j+1][s2]
+                gradient[s1, s2] += indicator - (dist_tj[j][s1] * dist_tj[j+1][s2])
+
+    gradient /= len(X_train)
+    flattened_gradient = gradient.flatten()
+
+    result = open(r'grad_tij.txt', 'w')
+    for g in flattened_gradient:
+        result.write(str(g) + "\n")
+    result.close()
+
+    stop = timeit.default_timer()
+    print('gradient_Tij (s): ' + str(stop - start))
+                #     print(str(j) + ' and ' + str(j+1))
+                # print('y_train[' + str(j) + '][' + str(s1) + ']: ' + str(y_train[j][s1]) + ', ' + 'y_train[' + str(j+1) + '][' + str(s2) + ']: ' + str(y_train[j+1][s2]))
 
     # result = open(r'grad.txt', 'a+')
 
@@ -179,6 +195,8 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
     for j in range(X_train.shape[0]):
          result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     result.close()
+
+    gradient_Tij(dist, X_train, y_train, Wj, Tij)
 
     stop = timeit.default_timer()
     print('conditional_prob_Wj (s): ' + str(stop - start))
@@ -243,7 +261,6 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
     result.close()
 
     gradient_Wj(dist, X_train, y_train, Wj)
-    # gradient_Tij(dist, X_train, y_train, Wj, Tij)
 
     stop = timeit.default_timer()
     print('conditional_prob_Wj (s): ' + str(stop - start))
@@ -266,7 +283,7 @@ if __name__ == '__main__':
     print("Tij.shape: " + str(Tij.shape))
 
     conditional_prob_Wj(X_train, y_train, Wj, Tij)
-    # conditional_prob_Tij(X_train, y_train, Wj, Tij)
+    conditional_prob_Tij(X_train, y_train, Wj, Tij)
 
 # store result in .txt
 # result = open(r'dist.txt', 'w+')
