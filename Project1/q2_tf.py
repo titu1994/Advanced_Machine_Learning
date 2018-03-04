@@ -40,7 +40,10 @@ with tf.Session() as sess:
     test_sequence_lengths_t = tf.constant(test_word_lengths, dtype=tf.int32, name='test_sequence_lengths')
 
     w_t = tf.get_variable('W', shape=(num_features, num_tags), dtype=tf.float32,
-                          regularizer=None)
+                          regularizer=None, initializer=tf.initializers.zeros())
+
+    transition_weights_t = tf.get_variable('T', shape=(num_tags, num_tags), dtype=tf.float32,
+                                           regularizer=None, initializer=tf.initializers.zeros())
 
     x_t_features = tf.reshape(x_t, [-1, num_features], name='X_flattened')
 
@@ -49,7 +52,7 @@ with tf.Session() as sess:
 
     # Compute the log-likelihood of the gold sequences and keep the transition
     # params for inference at test time.
-    log_likelihood, transition_weights_t = crf_log_likelihood(scores, y_t, train_sequence_lengths_t)
+    log_likelihood, transition_weights_t = crf_log_likelihood(scores, y_t, train_sequence_lengths_t, transition_weights_t)
 
     x_test_t_features = tf.reshape(x_test_t, [-1, num_features], name='X_test_flattened')
 
@@ -67,9 +70,26 @@ with tf.Session() as sess:
     learning_rate = tf.train.exponential_decay(0.01, global_step, decay_rate=0.9, staircase=True, decay_steps=250)
     optimizer = ScipyOptimizerInterface(loss)
 
+    opt = tf.train.GradientDescentOptimizer(0.01)
+    variables = [w_t, transition_weights_t]
+    gradients = opt.compute_gradients(loss, variables)
+
     saver = tf.train.Saver(max_to_keep=1)
 
     sess.run(tf.global_variables_initializer())
+
+    grads = sess.run(gradients)
+    print("Weights", grads[0][0].shape)
+    print("Transition", grads[1][0].shape)
+
+    dw = grads[0][0].flatten()
+    dt = grads[1][0].flatten()
+
+    with open("grads_tf.txt", 'w') as f:
+        for w in dw:
+            f.write(str(w) + "\n")
+        for t in dt:
+            f.write(str(t) + "\n")
 
     if RESTORE_CHECKPOINT:
         ckpt_path = tf.train.latest_checkpoint('models/')
@@ -83,7 +103,7 @@ with tf.Session() as sess:
     total_labels = np.sum(test_word_lengths)
 
     # Train for a fixed number of iterations.
-    # optimizer.minimize(sess)
+    #optimizer.minimize(sess)
 
     tf_viterbi_sequence, loss_value = sess.run([viterbi_sequence, loss])
 
