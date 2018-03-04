@@ -193,7 +193,7 @@ def conditional_prob(X_train, y_train, Wj, Tij):
     print("avg: " + str(avg))
     print(dist.shape)
 
-    result = open(r'dist2.txt', 'w+')
+    result = open(r'dist.txt', 'w+')
     for j in range(X_train.shape[0]):
          result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     result.close()
@@ -210,10 +210,10 @@ if __name__ == '__main__':
     train_data, test_data = load_Q2_data()
     t_list = list(train_data.items())
 
-    y_train = np.empty([len(t_list), 26], dtype=np.int8) # [n, 26], change it to n
-    X_train = np.empty([len(t_list), 129], dtype=np.int16) # [n, 128], change it to n
+    y_train = np.zeros([len(t_list), 26], dtype=np.int8) # [n, 26], change it to n
+    X_train = np.zeros([len(t_list), 129], dtype=np.int16) # [n, 128], change it to n
     for index, i in enumerate(t_list):
-        y_train[index] = ord(i[1][0][0]) - 97
+        y_train[index, ord(i[1][0][0]) - 97] = 1
         X_train[index][0] = i[1][2]
         X_train[index][1:] = i[1][4]
 
