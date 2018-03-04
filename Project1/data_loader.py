@@ -3,7 +3,7 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 
-plt.style.use('seaborn-paper')
+# plt.style.use('seaborn-paper')
 
 Q1_TRAIN_PATH = "data/decode_input.txt"
 Q2_MODEL_PATH = "data/model.txt"
