@@ -78,16 +78,18 @@ with tf.Session() as sess:
 
     sess.run(tf.global_variables_initializer())
 
-    grads = sess.run(gradients)
-    print("Weights", grads[0][0].shape)
-    print("Transition", grads[1][0].shape)
+    grad_variables = sess.run(gradients)
+    print("Weights", grad_variables[0][0].shape)
+    print("Transition", grad_variables[1][0].shape)
 
-    dw = grads[0][0].flatten()
-    dt = grads[1][0].flatten()
+    dw = grad_variables[0][0].flatten()
+    dt = grad_variables[1][0].flatten()
 
     with open("grads_tf.txt", 'w') as f:
         for w in dw:
             f.write(str(w) + "\n")
+
+    with open("grads_tij_tf.txt", 'w') as f:
         for t in dt:
             f.write(str(t) + "\n")
 
