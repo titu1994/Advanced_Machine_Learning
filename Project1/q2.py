@@ -51,7 +51,7 @@ def forward_pass(X_train, Wj, Tij):
             inter = np.dot(X_train[j][1:], Wj.T)
             for s1 in range(Wj.shape[0]):
                 for s2 in range(Wj.shape[0]):
-                    alpha[j, s1] = alpha[j-1, s2] * np.exp(inter[s1] + Tij[s2, s1])
+                    alpha[j, s1] += alpha[j-1, s2] * np.exp(inter[s1] + Tij[s2, s1])
     stop = timeit.default_timer()
     print('forward_pass (s): ' + str(stop - start))
 
@@ -72,7 +72,8 @@ def backward_pass(X_train, Wj, Tij):
             inter = np.dot(X_train[j][1:], Wj.T)
             for s1 in range(Wj.shape[0]):
                 for s2 in range(Wj.shape[0]):
-                    beta[j, s2] = beta[j+1, s1] * np.exp(inter[s2] + Tij[s1, s2])
+                    # beta[j, s2] += beta[j+1, s1] * np.exp(inter[s2] + Tij[s1, s2])
+                    beta[j, s1] += beta[j+1, s2] * np.exp(inter[s1] + Tij[s2, s1])
     stop = timeit.default_timer()
     print('backward_pass (s): ' + str(stop - start))
 
@@ -147,32 +148,48 @@ def conditional_prob(X_train, Wj, Tij):
     start = timeit.default_timer()
 
     # load alpha/beta from .npy files (pre-computed)
-    alpha = np.load('alpha.npy', mmap_mode='r')
-    beta = np.load('beta.npy', mmap_mode='r')
+    # alpha = np.load('alpha.npy', mmap_mode='r')
+    # beta = np.load('beta.npy', mmap_mode='r')
     # log_alpha = log_forward_pass(X_train, Wj, Tij)
     # log_beta = log_backward_pass(X_train, Wj, Tij)
-    # alpha = forward_pass(X_train, Wj, Tij)
-    # beta = backward_pass(X_train, Wj, Tij)
+    alpha = forward_pass(X_train, Wj, Tij)
+    beta = backward_pass(X_train, Wj, Tij)
 
-    for j in range(X_train.shape[0] - 1):
-        inter = np.exp(np.dot(X_train[j+1][1:], Wj.T))
+    for j in range(X_train.shape[0]):
+        inter = np.exp(np.dot(X_train[j][1:], Wj.T))
         for s1 in range(Wj.shape[0]):
             for s2 in range(Wj.shape[0]):
-                alpha_temp = alpha[j-1, s2]
-                beta_temp = beta[j+1, s1]
+                alpha_temp = alpha[j, s2]
+                beta_temp = beta[j, s1]
                 dist[j, s1] = alpha_temp * beta_temp * inter[s1]
+        # dist[j,] /= alpha[]
 
-    inter = np.exp(np.dot(X_train[j][1:], Wj.T))
-    for s1 in range(Wj.shape[0]):
-        for s2 in range(Wj.shape[0]):
-            alpha_temp = alpha[-2, s2]
-            beta_temp = 1
-            dist[-1, s1] = alpha_temp * beta_temp * inter[s1]
+    # for j in range(X_train.shape[0] - 1):
+    #     inter = np.exp(np.dot(X_train[j+1][1:], Wj.T))
+    #     for s1 in range(Wj.shape[0]):
+    #         for s2 in range(Wj.shape[0]):
+    #             alpha_temp = alpha[j-1, s2]
+    #             beta_temp = beta[j+1, s1]
+    #             dist[j, s1] = alpha_temp * beta_temp * inter[s1]
 
-    dist /= alpha
+    # inter = np.exp(np.dot(X_train[j][1:], Wj.T))
+    # for s1 in range(Wj.shape[0]):
+    #     for s2 in range(Wj.shape[0]):
+    #         alpha_temp = alpha[-2, s2]
+    #         beta_temp = 1
+    #         dist[-1, s1] = alpha_temp * beta_temp * inter[s1]
+    
+    # Z = fm(ym) is last letter of every word...?
+    # dist /= np.sum(alpha[-1])
+    # distsum = dist.sum(axis=1)
+    # dist = dist / distsum[:, np.newaxis]
+
+    # 1/n*log p(y|X)
+    avg = np.mean(np.log(dist))
+    print("avg: " + str(avg))
     print(dist.shape)
 
-    result = open(r'dist.txt', 'w+')
+    result = open(r'dist2.txt', 'w+')
     for j in range(X_train.shape[0]):
          result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     result.close()
