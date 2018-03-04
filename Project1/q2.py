@@ -109,32 +109,39 @@ def log_backward_pass(X_train, Wj, Tij):
 
     return beta
 
-def gradient_Wj(dist, X_train, Wj, Tij):
+def gradient_Wj(dist, X_train, y_train, Wj):
     start = timeit.default_timer()
-    gradient = np.zeros([X_train.shape[0],  Wj.shape[0]])
+    gradient = np.zeros_like(Wj)  # (26, 128)
 
-    result = open(r'grad.txt', 'w+')
+    result = open(r'grad.txt', 'w')
 
     for j in range(X_train.shape[0]):
-        for s in range(Wj.shape[0]):
-            result.write('grad[' + str(j) + ', ' + str(s) + ']: ' + str(dist[j, s]) + '\n')
+        y_delta = (y_train[j] - dist[j]).reshape((-1, 1))
+        x_delta = X_train[j, 1:].reshape((1, -1))
+        gradient += np.dot(y_delta, x_delta)
+
+    gradient /= len(X_train)
+
+    flattened_gradient = gradient.flatten()
+    for g in flattened_gradient:
+        result.write(str(g) + "\n")
     result.close()
 
     stop = timeit.default_timer()
     print('gradient_Wj (s): ' + str(stop - start))
 
-def conditional_prob(X_train, Wj, Tij):
+def conditional_prob(X_train, y_train, Wj, Tij):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
     # dist[0,] = 1
     start = timeit.default_timer()
 
     # load alpha/beta from .npy files (pre-computed)
-    # alpha = np.load('alpha.npy', mmap_mode='r')
-    # beta = np.load('beta.npy', mmap_mode='r')
+    alpha = np.load('alpha.npy', mmap_mode='r')
+    beta = np.load('beta.npy', mmap_mode='r')
     # log_alpha = log_forward_pass(X_train, Wj, Tij)
     # log_beta = log_backward_pass(X_train, Wj, Tij)
-    alpha = forward_pass(X_train, Wj, Tij)
-    beta = backward_pass(X_train, Wj, Tij)
+    #alpha = forward_pass(X_train, Wj, Tij)
+    #beta = backward_pass(X_train, Wj, Tij)
 
     for j in range(X_train.shape[0]):
         inter = np.exp(np.dot(X_train[j][1:], Wj.T))
@@ -161,9 +168,9 @@ def conditional_prob(X_train, Wj, Tij):
     #         dist[-1, s1] = alpha_temp * beta_temp * inter[s1]
     
     # Z = fm(ym) is last letter of every word...?
-    # dist /= np.sum(alpha[-1])
-    # distsum = dist.sum(axis=1)
-    # dist = dist / distsum[:, np.newaxis]
+    #dist /= np.sum(alpha[-1])
+    distsum = dist.sum(axis=1)
+    dist = dist / distsum[:, np.newaxis]
 
     # 1/n*log p(y|X)
     avg = np.mean(np.log(dist))
@@ -175,10 +182,12 @@ def conditional_prob(X_train, Wj, Tij):
          result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     result.close()
 
-    gradient_Wj(dist, X_train, Wj, Tij)
+    gradient_Wj(dist, X_train, y_train, Wj)
 
     stop = timeit.default_timer()
     print('conditional_prob (s): ' + str(stop - start))
+
+
 
 if __name__ == '__main__':
     Wj, Tij = load_Q2_model()
@@ -197,7 +206,7 @@ if __name__ == '__main__':
     print("Wj.shape: " + str(Wj.shape))
     print("Tij.shape: " + str(Tij.shape))
 
-    conditional_prob(X_train, Wj, Tij)
+    conditional_prob(X_train, y_train, Wj, Tij)
 
 # store result in .txt
 # result = open(r'dist.txt', 'w+')
