@@ -80,6 +80,7 @@ beta.txt
 grad.txt
 dist.txt
 dist2.txt
+Project1/*.txt
 
 # pyenv
 .python-version
