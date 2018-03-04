@@ -19,7 +19,7 @@ def load_Q1_data():
     Tij = lines[26 * 128 + 100 * 128:]
 
     Xi = np.array(Xi, dtype=np.float32).reshape((100, 128))
-    Wj = np.array(Wj, dtype=np.float32).reshape((26, 128))
+    Wj = np.array(Wj, dtype=np.float32).reshape((128, 26)).T
     Tij = np.array(Tij, dtype=np.float32).reshape((26, 26), order='F')
 
     print("Xi", Xi.shape, "Wj", Wj.shape, "Tij", Tij.shape)
@@ -30,7 +30,7 @@ def load_Q2_model():
         lines = f.readlines()
     Wj = lines[:26*128]
     Tij = lines[26*128:]
-    Wj = np.array(Wj, dtype=np.float32).reshape((26, 128))
+    Wj = np.array(Wj, dtype=np.float32).reshape((128, 26)).T
     Tij = np.array(Tij, dtype=np.float32).reshape((26, 26), order='F')
     print(Wj.shape)
     print(Tij.shape)
