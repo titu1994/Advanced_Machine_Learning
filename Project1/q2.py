@@ -6,9 +6,9 @@ import sys
 import timeit
 import threading
 
+from data_loader import load_Q2_data
+
 Q2_MODEL_PATH = "data/model.txt"
-Q2_TRAIN_PATH = "data/train.txt"
-train_data = {}
 
 def load_Q2_model():
     with open(Q2_MODEL_PATH, 'r') as f:
@@ -18,25 +18,6 @@ def load_Q2_model():
     Wj = np.array(Wj, dtype=np.float32).reshape((26, 128))
     Tij = np.array(Tij, dtype=np.float32).reshape((26, 26), order='F')
     return Wj, Tij
-    
-def load_Q2_data():
-    with open(Q2_TRAIN_PATH, 'r') as f:
-        lines = f.readlines()
-    for l in lines:
-        letter = re.findall(r'[a-z]', l)
-        letter = letter[0]
-        l = re.findall(r'\d+', l)
-        l = list(map(int, l))
-        letter_id = l[0]
-        next_id = l[1]
-        word_id = l[2]
-        pos = l[3]
-        p_ij = np.array(l[4:])
-        global train_data
-        # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
-        train_data.update({letter_id: [letter, next_id, word_id, pos, p_ij]})
-    train_data = collections.OrderedDict(train_data)
-    return train_data
 
 # forward pass for j=0...m
 def forward_pass(X_train, Wj, Tij):
@@ -201,7 +182,7 @@ def conditional_prob(X_train, Wj, Tij):
 
 if __name__ == '__main__':
     Wj, Tij = load_Q2_model()
-    train_data = load_Q2_data()
+    train_data, test_data = load_Q2_data()
     t_list = list(train_data.items())
 
     y_train = np.empty([len(t_list), 26], dtype=np.int8) # [n, 26], change it to n
