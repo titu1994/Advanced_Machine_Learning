@@ -70,6 +70,16 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# alpha, beta, distribution files
+bp.txt
+fp.txt
+log_alpha.txt
+log_beta.txt
+alpha.txt
+beta.txt
+grad.txt
+dist.txt
+
 # pyenv
 .python-version
 
