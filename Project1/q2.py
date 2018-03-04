@@ -130,6 +130,22 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     stop = timeit.default_timer()
     print('gradient_Wj (s): ' + str(stop - start))
 
+
+def gradient_Tij(dist, X_train, y_train, Tij):
+    start = timeit.default_timer()
+    gradient = np.zeros_like(Tij)  # (26, 128)
+
+    result = open(r'grad.txt', 'a+')
+
+    flattened_gradient = gradient.flatten()
+    for g in flattened_gradient:
+        result.write(str(g) + "\n")
+    result.close()
+
+    stop = timeit.default_timer()
+    print('gradient_Tij (s): ' + str(stop - start))
+
+
 def conditional_prob(X_train, y_train, Wj, Tij):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
     # dist[0,] = 1
