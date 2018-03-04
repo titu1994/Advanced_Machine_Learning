@@ -79,6 +79,7 @@ alpha.txt
 beta.txt
 grad.txt
 dist.txt
+dist2.txt
 
 # pyenv
 .python-version
