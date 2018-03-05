@@ -5,6 +5,7 @@ import collections
 import sys
 import timeit
 import threading
+from scipy.optimize import check_grad
 
 from data_loader import load_Q2_data
 
@@ -129,6 +130,7 @@ def gradient_Wj(dist, X_train, y_train, Wj):
 
     stop = timeit.default_timer()
     print('gradient_Wj (s): ' + str(stop - start))
+    return gradient
 
 def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
     start = timeit.default_timer()
@@ -138,7 +140,7 @@ def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
         for s1 in range(Wj.shape[0]):
             for s2 in range(Wj.shape[0]):
                 indicator = y_train[j][s1] and y_train[j+1][s2]
-                gradient[s1, s2] += indicator - (dist_tj[j][s1] * dist_tj[j+1][s2])
+                gradient[s1, s2] += indicator - np.dot(dist_tj[j][s1], dist_tj[j+1][s2])
 
     gradient /= len(X_train)
     flattened_gradient = gradient.flatten()
@@ -162,6 +164,7 @@ def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
 
     stop = timeit.default_timer()
     print('gradient_Tij (s): ' + str(stop - start))
+    return gradient
 
 def conditional_prob_Tij(X_train, y_train, Wj, Tij):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
@@ -247,9 +250,9 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
     
     # Z = fm(ym) is last letter of every word...?
     #dist /= np.sum(alpha[-1])
-    distsum = dist.sum(axis=1)
-    dist = dist / distsum[:, np.newaxis]
-
+    # distsum = dist.sum(axis=1)
+    # dist = dist / distsum[:, np.newaxis]
+    dist /= alpha
     # 1/n*log p(y|X)
     avg = np.mean(np.log(dist))
     print("avg: " + str(avg))
@@ -260,10 +263,11 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
          result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     result.close()
 
-    gradient_Wj(dist, X_train, y_train, Wj)
+    gradWj = gradient_Wj(dist, X_train, y_train, Wj)
 
     stop = timeit.default_timer()
     print('conditional_prob_Wj (s): ' + str(stop - start))
+    return dist
 
 if __name__ == '__main__':
     Wj, Tij = load_Q2_model()
@@ -282,8 +286,12 @@ if __name__ == '__main__':
     print("Wj.shape: " + str(Wj.shape))
     print("Tij.shape: " + str(Tij.shape))
 
-    conditional_prob_Wj(X_train, y_train, Wj, Tij)
-    conditional_prob_Tij(X_train, y_train, Wj, Tij)
+    # distWj, gradWj = conditional_prob_Wj(X_train, y_train, Wj, Tij)
+    distWj = conditional_prob_Wj(X_train, y_train, Wj, Tij)
+    check_grad(conditional_prob_Wj, gradient_Wj, distWj, X_train, y_train, Wj)
+    # conditional_prob_Tij(X_train, y_train, Wj, Tij)
+
+
 
 # store result in .txt
 # result = open(r'dist.txt', 'w+')

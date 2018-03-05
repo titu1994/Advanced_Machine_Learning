@@ -85,7 +85,7 @@ with tf.Session() as sess:
     dw = grads[0][0].flatten()
     dt = grads[1][0].flatten()
 
-    with open("grads_tf.txt", 'w') as f:
+    with open("grad.txt", 'w') as f:
         for w in dw:
             f.write(str(w) + "\n")
         for t in dt:
