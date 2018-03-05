@@ -39,7 +39,7 @@ def forward_pass(X_train, Wj, Tij):
                 for s2 in range(Wj.shape[0]):
                     alpha[j, s1] += alpha[j - 1, s2] * np.exp(inter[s1] + Tij[s2, s1])
     stop = timeit.default_timer()
-    print('forward_pass (s): ' + str(stop - start))
+    #print('forward_pass (s): ' + str(stop - start))
 
     # save computed alpha in alpha.npy
     np.save('alpha.npy', alpha)
@@ -62,7 +62,7 @@ def backward_pass(X_train, Wj, Tij):
                     beta[j, s2] += beta[j + 1, s1] * np.exp(inter[s2] + Tij[s1, s2])
                     # beta[j, s1] += beta[j+1, s2] * np.exp(inter[s1] + Tij[s2, s1])
     stop = timeit.default_timer()
-    print('backward_pass (s): ' + str(stop - start))
+    #print('backward_pass (s): ' + str(stop - start))
 
     # save computed beta in beta.npy
     np.save('beta.npy', beta)
@@ -126,7 +126,7 @@ def gradient_Wj(dist, X, y, Wj):
     # result.close()
 
     stop = timeit.default_timer()
-    print('gradient_Wj (s): ' + str(stop - start))
+    #print('gradient_Wj (s): ' + str(stop - start))
 
     return gradient
 
@@ -147,13 +147,13 @@ def gradient_Tij(dist_tj, X, y, Wj, Tij):
     gradient /= len(X)
     flattened_gradient = gradient.flatten()
 
-    result = open(r'grad_tij.txt', 'w')
-    for g in flattened_gradient:
-        result.write(str(g) + "\n")
-    result.close()
+    # result = open(r'grad_tij.txt', 'w')
+    # for g in flattened_gradient:
+    #     result.write(str(g) + "\n")
+    # result.close()
 
     stop = timeit.default_timer()
-    print('gradient_Tij (s): ' + str(stop - start))
+    #print('gradient_Tij (s): ' + str(stop - start))
     #     print(str(j) + ' and ' + str(j+1))
     # print('y_train[' + str(j) + '][' + str(s1) + ']: ' + str(y_train[j][s1]) + ', ' + 'y_train[' + str(j+1) + '][' + str(s2) + ']: ' + str(y_train[j+1][s2]))
 
@@ -165,7 +165,7 @@ def gradient_Tij(dist_tj, X, y, Wj, Tij):
     # result.close()
 
     stop = timeit.default_timer()
-    print('gradient_Tij (s): ' + str(stop - start))
+    #print('gradient_Tij (s): ' + str(stop - start))
 
     return gradient
 
@@ -174,11 +174,11 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
     start = timeit.default_timer()
 
-    alpha = np.load('alpha.npy', mmap_mode='r')
-    beta = np.load('beta.npy', mmap_mode='r')
+    #alpha = np.load('alpha.npy', mmap_mode='r')
+    #beta = np.load('beta.npy', mmap_mode='r')
 
-    #alpha = forward_pass(X_train, Wj, Tij)
-    #beta = backward_pass(X_train, Wj, Tij)
+    alpha = forward_pass(X_train, Wj, Tij)
+    beta = backward_pass(X_train, Wj, Tij)
 
     lower_index = np.arange(0, X_train.shape[0] - 1)
     higher_index = np.arange(1, X_train.shape[0])
@@ -212,7 +212,7 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
 
     avg = np.mean(np.log(dist))
 
-    print("avg: " + str(avg))
+    #print("avg: " + str(avg))
     print(dist.shape)
 
     # result = open(r'dist_tij.txt', 'w+')
@@ -223,7 +223,7 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
     gradient = gradient_Tij(dist, X_train, y_train, Wj, Tij)
 
     stop = timeit.default_timer()
-    print('conditional_prob_Wj (s): ' + str(stop - start))
+    #print('conditional_prob_Wj (s): ' + str(stop - start))
 
     return dist, gradient
 
@@ -234,12 +234,12 @@ def conditional_prob_Wj(X_train, y_train, Wj):
     start = timeit.default_timer()
 
     # load alpha/beta from .npy files (pre-computed)
-    alpha = np.load('alpha.npy', mmap_mode='r')
-    beta = np.load('beta.npy', mmap_mode='r')
+    #alpha = np.load('alpha.npy', mmap_mode='r')
+    #beta = np.load('beta.npy', mmap_mode='r')
     # log_alpha = log_forward_pass(X_train, Wj, Tij)
     # log_beta = log_backward_pass(X_train, Wj, Tij)
-    #alpha = forward_pass(X_train, Wj, Tij)
-    #beta = backward_pass(X_train, Wj, Tij)
+    alpha = forward_pass(X_train, Wj, Tij)
+    beta = backward_pass(X_train, Wj, Tij)
 
     inter_energies = np.exp(np.dot(X_train[:, 1:], Wj.T))
 
@@ -281,7 +281,7 @@ def conditional_prob_Wj(X_train, y_train, Wj):
 
     # 1/n*log p(y|X)
     avg = np.mean(np.log(dist))
-    print("avg: " + str(avg))
+    #print("avg: " + str(avg))
     print(dist.shape)
 
     # result = open(r'dist.txt', 'w+')
@@ -292,7 +292,7 @@ def conditional_prob_Wj(X_train, y_train, Wj):
     gradient = gradient_Wj(dist, X_train, y_train, Wj)
 
     stop = timeit.default_timer()
-    print('conditional_prob_Wj (s): ' + str(stop - start))
+    #print('conditional_prob_Wj (s): ' + str(stop - start))
 
     return dist, gradient
 
@@ -303,11 +303,13 @@ def objective(w_t, x, y):
 
     preds = max_sum_decoder(x[:, 1:], w, t)
 
-    logloss = -1000 / len(x) * np.mean(preds)
+    logloss = 1000 / len(x) * np.mean(preds)
     l2_loss = 0.5 * np.linalg.norm(w)
     transition_loss = 0.5 * np.sum(np.square(t))
 
     total_loss = logloss + l2_loss + transition_loss
+
+    print("Objective loss : ", total_loss)
 
     return total_loss
 
@@ -359,7 +361,6 @@ if __name__ == '__main__':
     result = fmin_l_bfgs_b(objective, initial_guess, d_objective, args=(X_train, y_train),
                            disp=1, maxfun=EVAL_COUNT, maxiter=EVAL_COUNT)
 
-    print(dir(result))
     print(result)
 
 # store result in .txt
