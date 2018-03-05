@@ -29,6 +29,7 @@ def max_sum_decoder(X, W, T):
     for i in range(X.shape[0] - 1, 0, -1):
         k = opt[i, k]
         predictions[i - 1] = k
+
     return predictions
 
 def brute_force(X,W,T):
