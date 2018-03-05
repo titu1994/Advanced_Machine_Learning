@@ -6,6 +6,7 @@ import sys
 import timeit
 import threading
 from scipy.optimize import check_grad
+import pdb
 
 from data_loader import load_Q2_data
 
@@ -140,6 +141,42 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     print('gradient_Wj (s): ' + str(stop - start))
     return gradient
 
+def gradient_Wj_vector(dist, X_train, y_train, Wj):
+    dist = dist.reshape((-1, 26))
+    X_train = X_train.reshape((-1, 129))
+    y_train = y_train.reshape((-1, 26))
+    Wj = Wj.reshape((26, 128))
+
+    start = timeit.default_timer()
+    gradient = np.zeros_like(Wj)  # (26, 128)
+
+
+    print("distshape: " + str(dist.shape))
+    print("y_trainshape: " + str(y_train.shape))
+
+    for j in range(X_train.shape[0]):
+        for s in range(Wj.shape[0]):
+            # print('y_train[j][s]: ' + str(y_train[j][s]))
+            # print('dist[j][s]: ' + str(dist[j][s]))
+            gradient += np.dot(y_train[j][s] - dist[j][s], X_train[j][1:])
+    # for j in range(X_train.shape[0]):
+    #     y_delta = (y_train[j] - dist[j]).reshape((-1, 1))
+    #     x_delta = X_train[j, 1:].reshape((1, -1))
+    #     gradient += np.dot(y_delta, x_delta)
+
+    gradient /= len(X_train)
+
+    flattened_gradient = gradient.flatten()
+
+    result = open(r'gradwj.txt', 'w')
+    for g in flattened_gradient:
+        result.write(str(g) + "\n")
+    result.close()
+
+    stop = timeit.default_timer()
+    print('gradient_Wj (s): ' + str(stop - start))
+    return gradient
+
 def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
     start = timeit.default_timer()
     gradient = np.zeros_like(Tij)  # (26, 26)
@@ -229,6 +266,85 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
     for j in range(X_train.shape[0]):
         # inter = np.exp(np.dot(X_train[j][1:], Wj.T))
         for s in range(Wj.shape[0]):
+            #pdb.set_trace()
+            try:
+                alpha_temp = alpha[j, s]
+                beta_temp = beta[j, s]
+                inter = np.exp(np.dot(X_train[j][1:], Wj[s]))
+                dist[j, s] = alpha_temp * beta_temp * inter
+            except ValueError:
+                print('error at: ' + str(j) + ', ' + str(s))
+            # dist[j, s] = alpha_temp * beta_temp * inter[s]
+
+    # for j in range(X_train.shape[0]):
+    #     inter = np.exp(np.dot(X_train[j][1:], Wj.T))
+    #     for s1 in range(Wj.shape[0]):
+    #         for s2 in range(Wj.shape[0]):
+    #             alpha_temp = alpha[j, s2] # s2???
+    #             beta_temp = beta[j, s1]
+    #             dist[j, s1] = alpha_temp * beta_temp * inter[s1]
+        # dist[j,] /= alpha[]
+
+    # for j in range(X_train.shape[0] - 1):
+    #     inter = np.exp(np.dot(X_train[j+1][1:], Wj.T))
+    #     for s1 in range(Wj.shape[0]):
+    #         for s2 in range(Wj.shape[0]):
+    #             alpha_temp = alpha[j-1, s2]
+    #             beta_temp = beta[j+1, s1]
+    #             dist[j, s1] = alpha_temp * beta_temp * inter[s1]
+
+    # inter = np.exp(np.dot(X_train[j][1:], Wj.T))
+    # for s1 in range(Wj.shape[0]):
+    #     for s2 in range(Wj.shape[0]):
+    #         alpha_temp = alpha[-2, s2]
+    #         beta_temp = 1
+    #         dist[-1, s1] = alpha_temp * beta_temp * inter[s1]
+    
+    # Z = fm(ym) is last letter of every word...?
+    #dist /= np.sum(alpha[-1])
+    
+    distsum = dist.sum(axis=1)
+    dist = dist / distsum[:, np.newaxis]
+    # dist /= alpha
+    # dist /= alpha
+    # 1/n*log p(y|X)
+    avg = np.mean(np.log(dist))
+    print("avg: " + str(avg))
+    print(dist.shape)
+
+    result = open(r'dist.txt', 'w+')
+    for j in range(X_train.shape[0]):
+         result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
+    result.close()
+
+    gradWj = gradient_Wj(dist, X_train, y_train, Wj)
+
+    stop = timeit.default_timer()
+    print('conditional_prob_Wj (s): ' + str(stop - start))
+    return dist
+
+def conditional_prob_Wj_vector(X_train, y_train, Wj, Tij):
+    X_train = X_train.reshape((-1, 129))
+    y_train = y_train.reshape((-1, 26))
+    Wj = Wj.reshape((26, 128))
+    Tij = Tij.reshape((26, 26))
+
+    dist = np.zeros([X_train.shape[0], Wj.shape[0]])
+    # dist[0,] = 1
+    start = timeit.default_timer()
+
+    # load alpha/beta from .npy files (pre-computed)
+    alpha = np.load('alpha.npy', mmap_mode='r')
+    beta = np.load('beta.npy', mmap_mode='r')
+    # log_alpha = log_forward_pass(X_train, Wj, Tij)
+    # log_beta = log_backward_pass(X_train, Wj, Tij)
+    #alpha = forward_pass(X_train, Wj, Tij)
+    #beta = backward_pass(X_train, Wj, Tij)
+
+    for j in range(X_train.shape[0]):
+        # inter = np.exp(np.dot(X_train[j][1:], Wj.T))
+        for s in range(Wj.shape[0]):
+            # pdb.set_trace()
             try:
                 alpha_temp = alpha[j, s]
                 beta_temp = beta[j, s]
@@ -303,6 +419,6 @@ if __name__ == '__main__':
     print("Tij.shape: " + str(Tij.shape))
 
     dist = conditional_prob_Wj(X_train, y_train, Wj, Tij)
-    # conditional_prob_Tij(X_train, y_train, Wj, Tij)
+    # conditional_prob_Tij(X_train, y_train, Wj, Tij)SS
 
-    check_grad(conditional_prob_Wj, gradient_Wj, dist, X_train, y_train, Wj)
+    check_grad(conditional_prob_Wj_vector, gradient_Wj_vector, dist.flatten(), X_train.flatten(), y_train.flatten(), Wj.flatten())
