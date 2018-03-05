@@ -19,7 +19,7 @@ def load_Q1_data():
     Tij = lines[26 * 128 + 100 * 128:]
 
     Xi = np.array(Xi, dtype=np.float32).reshape((100, 128))
-    Wj = np.array(Wj, dtype=np.float32).reshape((128, 26)).T
+    Wj = np.array(Wj, dtype=np.float32).reshape((26, 128))
     Tij = np.array(Tij, dtype=np.float32).reshape((26, 26), order='F')
 
     print("Xi", Xi.shape, "Wj", Wj.shape, "Tij", Tij.shape)
@@ -41,6 +41,7 @@ def load_Q2_data():
 
     with open(Q2_TRAIN_PATH, 'r') as f:
         lines = f.readlines()
+
     for l in lines:
         # get letter
         letter = re.findall(r'[a-z]', l)
