@@ -6,7 +6,11 @@ import sys
 import timeit
 import threading
 
+from scipy.optimize import fmin_l_bfgs_b
+
 from data_loader import load_Q2_data
+from utils import to_categorical
+from q1 import max_sum_decoder
 
 Q2_MODEL_PATH = "data/model.txt"
 
@@ -35,7 +39,7 @@ def forward_pass(X_train, Wj, Tij):
                 for s2 in range(Wj.shape[0]):
                     alpha[j, s1] += alpha[j - 1, s2] * np.exp(inter[s1] + Tij[s2, s1])
     stop = timeit.default_timer()
-    print('forward_pass (s): ' + str(stop - start))
+    #print('forward_pass (s): ' + str(stop - start))
 
     # save computed alpha in alpha.npy
     np.save('alpha.npy', alpha)
@@ -58,7 +62,7 @@ def backward_pass(X_train, Wj, Tij):
                     beta[j, s2] += beta[j + 1, s1] * np.exp(inter[s2] + Tij[s1, s2])
                     # beta[j, s1] += beta[j+1, s2] * np.exp(inter[s1] + Tij[s2, s1])
     stop = timeit.default_timer()
-    print('backward_pass (s): ' + str(stop - start))
+    #print('backward_pass (s): ' + str(stop - start))
 
     # save computed beta in beta.npy
     np.save('beta.npy', beta)
@@ -90,41 +94,49 @@ def log_backward_pass(X_train, Wj, Tij):
     return beta
 
 
-def gradient_Wj(dist, X_train, y_train, Wj):
+def gradient_Wj(dist, X, y, Wj):
     start = timeit.default_timer()
     # gradient = np.zeros_like(Wj)  # (26, 128)
 
-    x_index = np.arange(0, X_train.shape[0])
-    y_deltas = (y_train[x_index] - dist[x_index]).reshape((len(x_index), -1)).T
-    x_deltas = X_train[x_index, 1:].reshape((len(x_index), -1))
+    if y.ndim < 2:
+        y = to_categorical(y, 26)
+
+    x_index = np.arange(0, X.shape[0])
+    y_deltas = (y[x_index] - dist[x_index]).reshape((len(x_index), -1)).T
+    x_deltas = X[x_index, 1:].reshape((len(x_index), -1))
 
     gradient = np.dot(y_deltas, x_deltas)
-    print(gradient.shape)
+    #print(gradient.shape)
 
     # for j in range(X_train.shape[0]):
     #     y_delta = (y_train[j] - dist[j]).reshape((-1, 1))
     #     x_delta = X_train[j, 1:].reshape((1, -1))
     #     gradient += np.dot(y_delta, x_delta)
 
-    gradient /= len(X_train)
+    gradient /= len(X)
 
-    flattened_gradient = gradient.flatten()
+    # for l2 regularization
+    gradient += Wj
 
-    result = open(r'grad.txt', 'w')
-    for g in flattened_gradient:
-        result.write(str(g) + "\n")
-    result.close()
+    #flattened_gradient = gradient.flatten()
+
+    # result = open(r'grad.txt', 'w')
+    # for g in flattened_gradient:
+    #     result.write(str(g) + "\n")
+    # result.close()
 
     stop = timeit.default_timer()
-    print('gradient_Wj (s): ' + str(stop - start))
+    #print('gradient_Wj (s): ' + str(stop - start))
+
+    return gradient
 
 
-def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
+def gradient_Tij(dist_tj, X, y, Wj, Tij):
     start = timeit.default_timer()
     gradient = np.zeros_like(Tij)  # (26, 26)
 
-    lower_index = np.arange(0, X_train.shape[0] - 1)
-    higher_index = np.arange(1, X_train.shape[0])
+    lower_index = np.arange(0, X.shape[0] - 1)
+    higher_index = np.arange(1, X.shape[0])
 
     # for j in range(X_train.shape[0] - 1):
     for s1 in range(Wj.shape[0]):
@@ -132,16 +144,16 @@ def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
             indicator = np.logical_and(y_train[lower_index, s1], y_train[higher_index, s2])
             gradient[s1, s2] = np.sum(indicator - (dist_tj[lower_index, s1] * dist_tj[higher_index, s2]))
 
-    gradient /= len(X_train)
+    gradient /= len(X)
     flattened_gradient = gradient.flatten()
 
-    result = open(r'grad_tij.txt', 'w')
-    for g in flattened_gradient:
-        result.write(str(g) + "\n")
-    result.close()
+    # result = open(r'grad_tij.txt', 'w')
+    # for g in flattened_gradient:
+    #     result.write(str(g) + "\n")
+    # result.close()
 
     stop = timeit.default_timer()
-    print('gradient_Tij (s): ' + str(stop - start))
+    #print('gradient_Tij (s): ' + str(stop - start))
     #     print(str(j) + ' and ' + str(j+1))
     # print('y_train[' + str(j) + '][' + str(s1) + ']: ' + str(y_train[j][s1]) + ', ' + 'y_train[' + str(j+1) + '][' + str(s2) + ']: ' + str(y_train[j+1][s2]))
 
@@ -153,15 +165,20 @@ def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
     # result.close()
 
     stop = timeit.default_timer()
-    print('gradient_Tij (s): ' + str(stop - start))
+    #print('gradient_Tij (s): ' + str(stop - start))
+
+    return gradient
 
 
 def conditional_prob_Tij(X_train, y_train, Wj, Tij):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
     start = timeit.default_timer()
 
-    alpha = np.load('alpha.npy', mmap_mode='r')
-    beta = np.load('beta.npy', mmap_mode='r')
+    #alpha = np.load('alpha.npy', mmap_mode='r')
+    #beta = np.load('beta.npy', mmap_mode='r')
+
+    alpha = forward_pass(X_train, Wj, Tij)
+    beta = backward_pass(X_train, Wj, Tij)
 
     lower_index = np.arange(0, X_train.shape[0] - 1)
     higher_index = np.arange(1, X_train.shape[0])
@@ -195,7 +212,7 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
 
     avg = np.mean(np.log(dist))
 
-    print("avg: " + str(avg))
+    #print("avg: " + str(avg))
     print(dist.shape)
 
     # result = open(r'dist_tij.txt', 'w+')
@@ -203,24 +220,26 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
     #      result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     # result.close()
 
-    gradient_Tij(dist, X_train, y_train, Wj, Tij)
+    gradient = gradient_Tij(dist, X_train, y_train, Wj, Tij)
 
     stop = timeit.default_timer()
-    print('conditional_prob_Wj (s): ' + str(stop - start))
+    #print('conditional_prob_Wj (s): ' + str(stop - start))
+
+    return dist, gradient
 
 
-def conditional_prob_Wj(X_train, y_train, Wj, Tij):
+def conditional_prob_Wj(X_train, y_train, Wj):
     dist = np.zeros([X_train.shape[0], Wj.shape[0]])
     # dist[0,] = 1
     start = timeit.default_timer()
 
     # load alpha/beta from .npy files (pre-computed)
-    alpha = np.load('alpha.npy', mmap_mode='r')
-    beta = np.load('beta.npy', mmap_mode='r')
+    #alpha = np.load('alpha.npy', mmap_mode='r')
+    #beta = np.load('beta.npy', mmap_mode='r')
     # log_alpha = log_forward_pass(X_train, Wj, Tij)
     # log_beta = log_backward_pass(X_train, Wj, Tij)
-    # alpha = forward_pass(X_train, Wj, Tij)
-    # beta = backward_pass(X_train, Wj, Tij)
+    alpha = forward_pass(X_train, Wj, Tij)
+    beta = backward_pass(X_train, Wj, Tij)
 
     inter_energies = np.exp(np.dot(X_train[:, 1:], Wj.T))
 
@@ -262,7 +281,7 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
 
     # 1/n*log p(y|X)
     avg = np.mean(np.log(dist))
-    print("avg: " + str(avg))
+    #print("avg: " + str(avg))
     print(dist.shape)
 
     # result = open(r'dist.txt', 'w+')
@@ -270,13 +289,50 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
     #      result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
     # result.close()
 
-    gradient_Wj(dist, X_train, y_train, Wj)
+    gradient = gradient_Wj(dist, X_train, y_train, Wj)
 
     stop = timeit.default_timer()
-    print('conditional_prob_Wj (s): ' + str(stop - start))
+    #print('conditional_prob_Wj (s): ' + str(stop - start))
+
+    return dist, gradient
+
+
+def objective(w_t, x, y):
+    w = w_t[:26*128].reshape((26, 128))
+    t = w_t[26*128:].reshape((26, 26))
+
+    preds = max_sum_decoder(x[:, 1:], w, t)
+
+    logloss = 1000 / len(x) * np.mean(preds)
+    l2_loss = 0.5 * np.linalg.norm(w)
+    transition_loss = 0.5 * np.sum(np.square(t))
+
+    total_loss = logloss + l2_loss + transition_loss
+
+    print("Objective loss : ", total_loss)
+
+    return total_loss
+
+def d_objective(w_t, x, y):
+    w = w_t[:26 * 128].reshape((26, 128))
+    t = w_t[26 * 128:].reshape((26, 26))
+
+    x = x.reshape((-1, 129))
+
+    y = max_sum_decoder(x[:, 1:], w, t)
+    _, gradient_W = conditional_prob_Wj(x, y, w)
+    _, gradient_T = conditional_prob_Tij(x, y, w, t)
+
+    gradient_W = gradient_W.flatten()
+    gradient_T = gradient_T.flatten()
+    gradient = np.concatenate([gradient_W, gradient_T])
+    return gradient
 
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.INFO)
+
     Wj, Tij = load_Q2_model()
     train_data, test_data = load_Q2_data()
     t_list = list(train_data.items())
@@ -293,8 +349,19 @@ if __name__ == '__main__':
     print("Wj.shape: " + str(Wj.shape))
     print("Tij.shape: " + str(Tij.shape))
 
-    conditional_prob_Wj(X_train, y_train, Wj, Tij)
+    conditional_prob_Wj(X_train, y_train, Wj)
     conditional_prob_Tij(X_train, y_train, Wj, Tij)
+
+    W_initial = np.zeros_like(Wj).flatten()
+    T_initial = np.zeros_like(Tij).flatten()
+    initial_guess = np.concatenate([W_initial, T_initial])
+
+    EVAL_COUNT = 5
+
+    result = fmin_l_bfgs_b(objective, initial_guess, d_objective, args=(X_train, y_train),
+                           disp=1, maxfun=EVAL_COUNT, maxiter=EVAL_COUNT)
+
+    print(result)
 
 # store result in .txt
 # result = open(r'dist.txt', 'w+')

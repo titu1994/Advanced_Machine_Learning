@@ -8,7 +8,7 @@ num_labels = 26
 m = X.shape[0]  # 100
 dim = X.shape[1]  # 128
 
-def max_sum_decoder():
+def max_sum_decoder(X, W, T):
     opt = np.zeros([X.shape[0], W.shape[0]], dtype=np.int32)
     nodeweights = np.zeros([X.shape[0], W.shape[0]])
     values = np.zeros([X.shape[0], W.shape[0]])
@@ -63,7 +63,7 @@ def compute_brute_value(temp, X, W, T):
 
 if __name__ == '__main__':
 
-    preds_max_sum = max_sum_decoder()
+    preds_max_sum = max_sum_decoder(X, W, T)
 
     for i,p in enumerate(preds_max_sum):
         print("i=%d : Predicted = %s" % (i+1, chr(p+ord('a'))))
