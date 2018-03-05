@@ -114,16 +114,24 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     start = timeit.default_timer()
     gradient = np.zeros_like(Wj)  # (26, 128)
 
+    print("distshape: " + str(dist.shape))
+    print("y_trainshape: " + str(y_train.shape))
+
     for j in range(X_train.shape[0]):
-        y_delta = (y_train[j] - dist[j]).reshape((-1, 1))
-        x_delta = X_train[j, 1:].reshape((1, -1))
-        gradient += np.dot(y_delta, x_delta)
+        for s in range(Wj.shape[0]):
+            # print('y_train[j][s]: ' + str(y_train[j][s]))
+            # print('dist[j][s]: ' + str(dist[j][s]))
+            gradient += np.dot(y_train[j][s] - dist[j][s], X_train[j][1:])
+    # for j in range(X_train.shape[0]):
+    #     y_delta = (y_train[j] - dist[j]).reshape((-1, 1))
+    #     x_delta = X_train[j, 1:].reshape((1, -1))
+    #     gradient += np.dot(y_delta, x_delta)
 
     gradient /= len(X_train)
 
     flattened_gradient = gradient.flatten()
 
-    result = open(r'grad.txt', 'w')
+    result = open(r'gradwj.txt', 'w')
     for g in flattened_gradient:
         result.write(str(g) + "\n")
     result.close()
@@ -145,7 +153,7 @@ def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
     gradient /= len(X_train)
     flattened_gradient = gradient.flatten()
 
-    result = open(r'grad_tij.txt', 'w')
+    result = open(r'gradtij.txt', 'w')
     for g in flattened_gradient:
         result.write(str(g) + "\n")
     result.close()
@@ -190,6 +198,7 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
 
     distsum = dist.sum(axis=1)
     dist = dist / distsum[:, np.newaxis]
+    
     avg = np.mean(np.log(dist))
     print("avg: " + str(avg))
     print(dist.shape)
@@ -218,11 +227,16 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
     #beta = backward_pass(X_train, Wj, Tij)
 
     for j in range(X_train.shape[0]):
-        inter = np.exp(np.dot(X_train[j][1:], Wj.T))
+        # inter = np.exp(np.dot(X_train[j][1:], Wj.T))
         for s in range(Wj.shape[0]):
-            alpha_temp = alpha[j, s]
-            beta_temp = beta[j, s]
-            dist[j, s] = alpha_temp * beta_temp * inter[s]
+            try:
+                alpha_temp = alpha[j, s]
+                beta_temp = beta[j, s]
+                inter = np.exp(np.dot(X_train[j][1:], Wj[s]))
+                dist[j, s] = alpha_temp * beta_temp * inter
+            except ValueError:
+                print('error at: ' + str(j) + ', ' + str(s))
+            # dist[j, s] = alpha_temp * beta_temp * inter[s]
 
     # for j in range(X_train.shape[0]):
     #     inter = np.exp(np.dot(X_train[j][1:], Wj.T))
@@ -250,9 +264,11 @@ def conditional_prob_Wj(X_train, y_train, Wj, Tij):
     
     # Z = fm(ym) is last letter of every word...?
     #dist /= np.sum(alpha[-1])
-    # distsum = dist.sum(axis=1)
-    # dist = dist / distsum[:, np.newaxis]
-    dist /= alpha
+    
+    distsum = dist.sum(axis=1)
+    dist = dist / distsum[:, np.newaxis]
+    # dist /= alpha
+    # dist /= alpha
     # 1/n*log p(y|X)
     avg = np.mean(np.log(dist))
     print("avg: " + str(avg))
@@ -286,39 +302,7 @@ if __name__ == '__main__':
     print("Wj.shape: " + str(Wj.shape))
     print("Tij.shape: " + str(Tij.shape))
 
-    # distWj, gradWj = conditional_prob_Wj(X_train, y_train, Wj, Tij)
-    distWj = conditional_prob_Wj(X_train, y_train, Wj, Tij)
-    check_grad(conditional_prob_Wj, gradient_Wj, distWj, X_train, y_train, Wj)
+    dist = conditional_prob_Wj(X_train, y_train, Wj, Tij)
     # conditional_prob_Tij(X_train, y_train, Wj, Tij)
 
-
-
-# store result in .txt
-# result = open(r'dist.txt', 'w+')
-# for j in range(0, X_train.shape[0]):
-#     result.write('dist[' + str(j) + ']: ' + str([alpha[j, s] for s in range(1, Wj.shape[0])]) + '\n')
-# result.close()
-
-# # threading
-# class my_thread(threading.Thread):
-#     def __init__(self, threadID, name, X_train, Wj, Tij, p):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.name = name
-#         self.X_train = X_train
-#         self.Wj = Wj
-#         self.Tij = Tij
-#         self.p = p
-#     def run(self):
-#         if self.p == 'fp':
-#             forward_pass(X_train, Wj, Tij)
-#         elif self.p == 'bp':
-#             backward_pass(X_train, Wj, Tij)
-#         else:
-#             conditional_prob(X_train, Wj, Tij)
-#fp = my_thread(1, 'fp-thread', X_train, Wj, Tij, 'fp')
-#bp = my_thread(2, 'bp-thread', X_train, Wj, Tij, 'bp')
-# cp = my_thread(3, 'cp-thread', X_train, Wj, Tij, 'cp')
-# cp.start()
-# fp.start()
-# bp.start()
+    check_grad(conditional_prob_Wj, gradient_Wj, dist, X_train, y_train, Wj)

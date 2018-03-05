@@ -135,7 +135,7 @@ def gradient_Wj(dist, X_train, y_train, Wj):
 
     flattened_gradient = gradient.flatten()
 
-    result = open(r'grad.txt', 'w')
+    result = open(r'gradwj_vectorized.txt', 'w')
     for g in flattened_gradient:
         result.write(str(g) + "\n")
     result.close()
@@ -160,7 +160,7 @@ def gradient_Tij(dist_tj, X_train, y_train, Wj, Tij):
     gradient /= len(X_train)
     flattened_gradient = gradient.flatten()
 
-    result = open(r'grad_tij.txt', 'w')
+    result = open(r'gradtij_vectorized.txt', 'w')
     for g in flattened_gradient:
         result.write(str(g) + "\n")
     result.close()
