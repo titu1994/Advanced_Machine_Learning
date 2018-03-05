@@ -21,7 +21,6 @@ def load_Q2_model():
     return Wj, Tij
 
 
-# forward pass for j=0...m
 def forward_pass(X_train, Wj, Tij):
     start = timeit.default_timer()
     alpha = np.zeros([X_train.shape[0], Wj.shape[0]])  # init alpha values to zeros
@@ -66,30 +65,6 @@ def backward_pass(X_train, Wj, Tij):
     return beta
 
 
-def log_forward_pass(X_train, Wj, Tij):
-    start = timeit.default_timer()
-    alpha = np.zeros([X_train.shape[0], Wj.shape[0]])
-    alpha[0,] = 0
-    for j in range(1, X_train.shape[0]):
-        if X_train[j][0] != X_train[j - 1][0]:
-            alpha[j,] = 0
-        else:
-            inter = np.dot(X_train[j][1:], Wj.T)
-            for s1 in range(Wj.shape[0]):
-                for s2 in range(Wj.shape[0]):
-                    alpha[j, s1] = np.log(np.exp(alpha[j - 1, s2] + inter[s1] + Tij[s2, s1]))
-    stop = timeit.default_timer()
-    print('log_forward_pass (s): ' + str(stop - start))
-    np.save('log_alpha.npy', alpha)
-
-    result = open(r'log_alpha.txt', 'w+')
-    for j in range(X_train.shape[0]):
-        result.write('la[' + str(j) + ']: ' + str([alpha[j, s] for s in range(1, Wj.shape[0])]) + '\n')
-    result.close()
-
-    return alpha
-
-
 def log_backward_pass(X_train, Wj, Tij):
     start = timeit.default_timer()
     beta = np.zeros([X_train.shape[0], Wj.shape[0]])
@@ -120,8 +95,8 @@ def gradient_Wj(dist, X_train, y_train, Wj):
     # gradient = np.zeros_like(Wj)  # (26, 128)
 
     x_index = np.arange(0, X_train.shape[0])
-    y_deltas = (y_train[x_index] - dist[x_index]).reshape((-1, len(x_index)))
-    x_deltas = X_train[:, 1:].reshape((len(x_index), -1))
+    y_deltas = (y_train[x_index] - dist[x_index]).reshape((len(x_index), -1)).T
+    x_deltas = X_train[x_index, 1:].reshape((len(x_index), -1))
 
     gradient = np.dot(y_deltas, x_deltas)
     print(gradient.shape)
@@ -193,20 +168,21 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
 
     inter_energies = np.dot(X_train[:, 1:], Wj.T)
 
-    inter_lower = inter_energies[lower_index]
-    inter_higher = inter_energies[higher_index]
+    inter_lower = inter_energies[lower_index].astype('float64')
+    inter_higher = inter_energies[higher_index].astype('float64')
 
-    alpha_temp = alpha[lower_index]
-    beta_temp = beta[higher_index]
+    alpha_temp = alpha[lower_index].astype('float64')
+    beta_temp = beta[higher_index].astype('float64')
 
     # for j in range(X_train.shape[0] - 1):
     for s1 in range(Wj.shape[0]):
-        # alpha_temp = alpha[lower_index]
-        # beta_temp = beta[higher_index]
-        dist[:-1] += alpha_temp * beta_temp * np.exp(inter_lower[s1] + inter_higher[s1] + Tij[s1, :])
-        # for s2 in range(Wj.shape[0]):
+        for s2 in range(Wj.shape[0]):
+            # alpha_temp = alpha[lower_index]
+            # beta_temp = beta[higher_index]
+            dist[:-1, s1] += alpha_temp[:, s1] * beta_temp[:, s2] * np.exp(inter_lower[:, s1] + inter_higher[:, s2] + Tij[s1, s2])
+            # for s2 in range(Wj.shape[0]):
 
-        #   dist[j, s1] += alpha_temp * beta_temp * np.exp(inter[s1] + inter_next[s2] + Tij[s1, s2])
+            #   dist[j, s1] += alpha_temp * beta_temp * np.exp(inter[s1] + inter_next[s2] + Tij[s1, s2])
 
     inter = inter_energies[-1]  # np.exp(np.dot(X_train[-1][1:], Wj.T))
     for s in range(Wj.shape[0]):
@@ -216,7 +192,9 @@ def conditional_prob_Tij(X_train, y_train, Wj, Tij):
 
     distsum = dist.sum(axis=1)
     dist = dist / distsum[:, np.newaxis]
+
     avg = np.mean(np.log(dist))
+
     print("avg: " + str(avg))
     print(dist.shape)
 

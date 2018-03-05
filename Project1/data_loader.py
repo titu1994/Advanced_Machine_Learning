@@ -41,6 +41,7 @@ def load_Q2_data():
 
     with open(Q2_TRAIN_PATH, 'r') as f:
         lines = f.readlines()
+
     for l in lines:
         # get letter
         letter = re.findall(r'[a-z]', l)
