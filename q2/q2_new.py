@@ -6,15 +6,15 @@ import pdb
 from data_loader import load_Q2_model, load_Q2_data
 
 
-def forward_pass(Xword, Wj, Tij):  # calculate alpha(j, s) # values are not exactly correct...?
+def forward_pass(Xword, Wj, Tij):  # calculate alpha(j, s)
     Xword_alpha = np.zeros([len(Xword), 26])  # init (m x 26) matrix to hold alpha values
 
     Xword_hold = np.zeros([len(Xword), 128])  # init zeros to hold current word pixel values
     # print(Wj.shape)
     for i in range(len(Xword)):
-        Xword_hold[i] = Xword[i][2]  # XW_hold has pixel values for only letters in current word
+        Xword_hold[i] = Xword[i][2]  # XWord_hold has pixel values for only letters in current word
 
-    Xword = np.inner(Xword_hold, Wj)  # inner product of XW and Wj weights
+    Xword = np.inner(Xword_hold, Wj)  # inner product of XWord and Wj weights
 
     for j in range(1, len(Xword)):  # for each letter j in XW m
         # print("j",j,Xword[j-1])
@@ -26,15 +26,15 @@ def forward_pass(Xword, Wj, Tij):  # calculate alpha(j, s) # values are not exac
     return Xword_alpha  # return alpha values for j=0..m for XW
 
 
-def backward_pass(Xword, Wj, Tij):  # calculate beta(j, s) # values are not exactly correct...?
+def backward_pass(Xword, Wj, Tij):  # calculate beta(j, s)
     Xword_beta = np.zeros([len(Xword), 26])
     Tij = Tij.T
     print('len(Xword): ' + str(len(Xword)))
     Xword_hold = np.zeros([len(Xword), 128])  # init zeros to hold current word pixel values
     for i in range(len(Xword)):
-        Xword_hold[i] = Xword[i][2]  # XW_hold has pixel values for only letters in current word
+        Xword_hold[i] = Xword[i][2]  # XWord_hold has pixel values for only letters in current word
 
-    Xword = np.inner(Xword_hold, Wj)  # inner product of XW and Wj weights
+    Xword = np.inner(Xword_hold, Wj)  # inner product of XWord and Wj weights
 
     for j in range(len(Xword) - 2, -1, -1):
         letter_beta = Xword_beta[j+1] + Tij.T
@@ -45,7 +45,7 @@ def backward_pass(Xword, Wj, Tij):  # calculate beta(j, s) # values are not exac
     return Xword_beta  # return beta values for j=m-1..0 for XW
 
 
-def psi_fn(Xword, y, Tij):  # numerator for calculating likelihood value
+def psi_fn(Xword, y, Tij):  # psi_fn (numerator) for calculating likelihood value
     final = 0
     for j in range(len(Xword)):
         if j > 0:
@@ -53,16 +53,16 @@ def psi_fn(Xword, y, Tij):  # numerator for calculating likelihood value
     return np.exp(total)
 
 
-def partition_fn(alpha, Xword):  # denominator (Z) that normalizes psi_fn
+def partition_fn(alpha, Xword):  # Z (denominator) that normalizes psi_fn
     return np.sum(np.exp(alpha[-1] + Xword[-1]))
 
 
-def logpy_X(Xword, y, Tij):
+def logpy_X(Xword, y, Tij): # logp(y|X) for each word
     alpha = forward_pass(Xword, Tij)
     return np.log(psi_fn(y, Xword, Tij) / partition_fn(alpha, Xword))
 
 
-def logpy_X_sum(Wj, Tij, X_train, y, index):
+def logpy_X_sum(Wj, Tij, X_train, y, index): # logsum(p|X) for all words
     final = 0
     for j in range(index):
         Xword = np.inner(X_train[j], Wj)
