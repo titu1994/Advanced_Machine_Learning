@@ -4,7 +4,7 @@ import re
 import collections
 import sys
 import timeit
-import threading
+import pdb
 
 from scipy.optimize import fmin_l_bfgs_b, check_grad
 
@@ -236,57 +236,57 @@ def conditional_prob_Wj(X_train, y_train, Wj):
     # load alpha/beta from .npy files (pre-computed)
     #alpha = np.load('alpha.npy', mmap_mode='r')
     #beta = np.load('beta.npy', mmap_mode='r')
-    # log_alpha = log_forward_pass(X_train, Wj, Tij)
-    # log_beta = log_backward_pass(X_train, Wj, Tij)
     alpha = forward_pass(X_train, Wj, Tij)
     beta = backward_pass(X_train, Wj, Tij)
 
     inter_energies = np.exp(np.dot(X_train[:, 1:], Wj.T))
 
-    # for j in range(X_train.shape[0]):
-    # inter = np.exp(np.dot(X_train[j][1:], Wj.T))
     for s in range(Wj.shape[0]):
         alpha_temp = alpha[:, s]
         beta_temp = beta[:, s]
         dist[:, s] = alpha_temp * beta_temp * inter_energies[:, s]
 
+    word_counter = 0
+    for j in range(1, X_train.shape[0]):
+        if X_train[j][0] != X_train[j-1][0]:
+            for c in range(word_counter, -1, -1):
+                dist[j-c] /= alpha[j]
+            word_counter = 0
+        else:
+            word_counter += 1
+
+    result = open(r'dist-new.txt', 'w+')
+    for j in range(X_train.shape[0]):
+        result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(1, Wj.shape[0])]) + '\n')
+    result.close()
+
     # Z = fm(ym) is last letter of every word...?
-    # dist /= np.sum(alpha[-1])
-
-    dist /= alpha
-
+    # dist /= alpha
     #distsum = dist.sum(axis=1)
     #dist = dist / distsum[:, np.newaxis]
-
-    # 1/n*log p(y|X)
     avg = np.mean(np.log(dist))
     #print("avg: " + str(avg))
     print(dist.shape)
-
-    # result = open(r'dist.txt', 'w+')
-    # for j in range(X_train.shape[0]):
-    #      result.write('dist[' + str(j) + ']: ' + str([dist[j, s] for s in range(Wj.shape[0])]) + '\n')
-    # result.close()
-
     gradient = gradient_Wj(dist, X_train, y_train, Wj)
-
     stop = timeit.default_timer()
     #print('conditional_prob_Wj (s): ' + str(stop - start))
 
     return dist, gradient
 
+def log_conditional_prob(X_train, y_train, Wj, Tij):
+    alpha = forward_pass(X_train, Wj, Tij)
 
 def objective(w_t, x, y):
     w = w_t[:26*128].reshape((26, 128))
     t = w_t[26*128:].reshape((26, 26))
 
     preds, probas = max_sum_decoder(x[:, 1:], w, t)
-
+    # probas = conditional_prob_Wj(x, y, w)
     # probas = np.log(probas)
 
-    logloss = 1. / len(x) * np.sum(probas)
+    logloss = 1000 / len(x) * np.sum(probas)
     l2_loss = 1. * np.linalg.norm(w)
-    # transition_loss = 1. * np.sum(np.square(t))
+    transition_loss = 1. * np.sum(np.square(t))
 
     total_loss = logloss
 
@@ -340,8 +340,6 @@ def max_sum_decoder_vector(w_t, X, Y):
 
     return predictions
 
-
-
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)
@@ -374,38 +372,9 @@ if __name__ == '__main__':
     # result = fmin_l_bfgs_b(objective, initial_guess, d_objective, args=(X_train, y_train),
     #                        disp=1, maxfun=EVAL_COUNT, maxiter=EVAL_COUNT)
 
-    X_train = X_train[:2, :]
-    y_train = y_train[:2, :]
-    #print(result)
+    # X_train = X_train[:2, :]
+    # y_train = y_train[:2, :]
+    # print(result)
     result = check_grad(objective, d_objective, initial_guess, X_train, y_train)
+    # conditional_prob_Wj(X_train, y_train, Wj)
     print(result)
-
-# store result in .txt
-# result = open(r'dist.txt', 'w+')
-# for j in range(0, X_train.shape[0]):
-#     result.write('dist[' + str(j) + ']: ' + str([alpha[j, s] for s in range(1, Wj.shape[0])]) + '\n')
-# result.close()
-
-# # threading
-# class my_thread(threading.Thread):
-#     def __init__(self, threadID, name, X_train, Wj, Tij, p):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.name = name
-#         self.X_train = X_train
-#         self.Wj = Wj
-#         self.Tij = Tij
-#         self.p = p
-#     def run(self):
-#         if self.p == 'fp':
-#             forward_pass(X_train, Wj, Tij)
-#         elif self.p == 'bp':
-#             backward_pass(X_train, Wj, Tij)
-#         else:
-#             conditional_prob(X_train, Wj, Tij)
-# fp = my_thread(1, 'fp-thread', X_train, Wj, Tij, 'fp')
-# bp = my_thread(2, 'bp-thread', X_train, Wj, Tij, 'bp')
-# cp = my_thread(3, 'cp-thread', X_train, Wj, Tij, 'cp')
-# cp.start()
-# fp.start()
-# bp.start()
