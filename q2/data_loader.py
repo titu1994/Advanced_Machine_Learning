@@ -14,7 +14,7 @@ def load_Q2_model():
 
 	Wj = data[:26*128]
 	Tij = data[26*128:]
-	Wj = np.array(Wj, dtype=np.float32).reshape((128, 26)).T
+	Wj = np.array(Wj, dtype=np.float32).reshape(26,128)
 	Tij = np.array(Tij, dtype=np.float32).reshape((26, 26), order='F')
 	return Wj, Tij
 
