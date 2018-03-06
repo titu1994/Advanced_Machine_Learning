@@ -8,7 +8,8 @@ tf.set_random_seed(0)
 
 from Project1.data_loader import load_Q2_data, calculate_word_lengths, prepare_dataset
 
-RESTORE_CHECKPOINT = True
+RESTORE_CHECKPOINT = False
+C = 1000
 
 train_dataset, test_dataset = load_Q2_data()
 train_word_lengths = calculate_word_lengths(train_dataset)
@@ -54,30 +55,30 @@ with tf.Session() as sess:
     # params for inference at test time.
     log_likelihood, transition_weights_t = crf_log_likelihood(scores, y_t, train_sequence_lengths_t, transition_weights_t)
 
+    x_train_t_features = tf.reshape(x_t, [-1, num_features], name='X_train_flattened')
     x_test_t_features = tf.reshape(x_test_t, [-1, num_features], name='X_test_flattened')
 
     test_scores = tf.matmul(x_test_t_features, w_t, name='test_energies')
     test_scores = tf.reshape(test_scores, [num_test_examples, num_test_words, num_tags])
 
     # Compute the viterbi sequence and score.
+    viterbi_sequence_train, viterbi_train_scores = crf_decode(scores, transition_weights_t, train_sequence_lengths_t)
     viterbi_sequence, viterbi_score = crf_decode(test_scores, transition_weights_t, test_sequence_lengths_t)
 
     # Add a training op to tune the parameters.
-    loss = tf.reduce_mean(-log_likelihood)
+    loss = -C * tf.reduce_mean(log_likelihood)
+    loss += tf.nn.l2_loss(w_t)
+    loss += 0.5 * tf.reduce_sum(tf.square(transition_weights_t))
 
     global_step = tf.Variable(0, trainable=False, name='global_step')
 
-    learning_rate = tf.train.exponential_decay(0.01, global_step, decay_rate=0.9, staircase=True, decay_steps=250)
     optimizer = ScipyOptimizerInterface(loss)
-
-    opt = tf.train.GradientDescentOptimizer(0.01)
-    variables = [w_t, transition_weights_t]
-    gradients = opt.compute_gradients(loss, variables)
 
     saver = tf.train.Saver(max_to_keep=1)
 
     sess.run(tf.global_variables_initializer())
 
+<<<<<<< HEAD
     grad_variables = sess.run(gradients)
     print("Weights", grad_variables[0][0].shape)
     print("Transition", grad_variables[1][0].shape)
@@ -93,6 +94,21 @@ with tf.Session() as sess:
         for t in dt:
             f.write(str(t) + "\n")
 
+    # grad_variables = sess.run(gradients)
+    # print("Weights", grad_variables[0][0].shape)
+    # print("Transition", grad_variables[1][0].shape)
+    #
+    # dw = grad_variables[0][0].flatten()
+    # dt = grad_variables[1][0].flatten()
+    #
+    # with open("grads_tf.txt", 'w') as f:
+    #     for w in dw:
+    #         f.write(str(w) + "\n")
+    #
+    # with open("grads_tij_tf.txt", 'w') as f:
+    #     for t in dt:
+    #         f.write(str(t) + "\n")
+
     if RESTORE_CHECKPOINT:
         ckpt_path = tf.train.latest_checkpoint('models/')
 
@@ -100,22 +116,47 @@ with tf.Session() as sess:
             print("Loading Encoder Checkpoint !")
             saver.restore(sess, ckpt_path)
 
+    # Train for a fixed number of iterations.
+    optimizer.minimize(sess)
+
+    mask = (np.expand_dims(np.arange(num_train_words), axis=0) <
+            np.expand_dims(train_word_lengths, axis=1))
+    total_labels = np.sum(train_word_lengths)
+
+    tf_viterbi_sequence, logloss = sess.run([viterbi_sequence_train, loss])
+
+    correct_labels = np.sum((y_train == tf_viterbi_sequence) * mask)
+    accuracy = 100.0 * correct_labels / float(total_labels)
+
+    print("Train | Loss : %0.4f | Accuracy: %.2f%%" % (logloss, accuracy))
+
     mask = (np.expand_dims(np.arange(num_test_words), axis=0) <
             np.expand_dims(test_word_lengths, axis=1))
     total_labels = np.sum(test_word_lengths)
 
-    # Train for a fixed number of iterations.
-    #optimizer.minimize(sess)
+    tf_viterbi_sequence = sess.run(viterbi_sequence)
 
-    tf_viterbi_sequence, loss_value = sess.run([viterbi_sequence, loss])
-
-        #if (i + 1) % 100 == 0:
     correct_labels = np.sum((y_test == tf_viterbi_sequence) * mask)
     accuracy = 100.0 * correct_labels / float(total_labels)
 
-    print("Loss = %0.4f | Accuracy: %.2f%%" % (loss_value, accuracy))
+    print("Test | Accuracy: %.2f%%" % (accuracy))
 
     saver.save(sess, 'models/crf.ckpt', global_step)
 
+    opt = tf.train.GradientDescentOptimizer(0.01)
+    variables = [w_t, transition_weights_t]
+    gradients = opt.compute_gradients(loss, variables)
 
+    # grad_variables = sess.run(gradients)
+    #
+    # dw = grad_variables[0][0].flatten()
+    # dt = grad_variables[1][0].flatten()
+    #
+    # with open("grads_tf.txt", 'w') as f:
+    #     for w in dw:
+    #         f.write(str(w) + "\n")
+    #
+    # with open("grads_tij_tf.txt", 'w') as f:
+    #     for t in dt:
+    #         f.write(str(t) + "\n")
 
