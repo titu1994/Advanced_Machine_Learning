@@ -42,8 +42,9 @@ def load_Q2_data():
 
 def parse_Q2_data(train_data):
 	X_train = np.zeros((25943, 128), dtype=np.float64)
-	for i in range(len(train_data)):
-		X_train
+	for i in range(1, len(train_data)):
+		for j in range(len(train_data[i])):
+			print('i: ' + str(i) + ', j: ' + str(train_data[i][j][2]))
 
 if __name__ == '__main__':
 	Wj, Tij = load_Q2_model()

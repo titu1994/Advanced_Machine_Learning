@@ -7,7 +7,9 @@ from data_loader import load_Q2_model, load_Q2_data
 
 def forward_pass(Xword, Wj, Tij): # calculate alpha(j, s) # values are not exactly correct...?
 	Xword_alpha = np.zeros((len(Xword), 26)) # init (m x 26) matrix to hold alpha values
+
 	Xword_hold = np.zeros((len(Xword), 128)) # init zeros to hold current word pixel values
+
 	for i in range(len(Xword)):
 		Xword_hold[i] = Xword[i][2] # XW_hold has pixel values for only letters in current word
 
@@ -18,7 +20,7 @@ def forward_pass(Xword, Wj, Tij): # calculate alpha(j, s) # values are not exact
 		letter_alpha_max = np.max(letter_alpha, axis=1)
 		letter_alpha = (letter_alpha.T - letter_alpha_max).T
 		Xword_alpha[j] = letter_alpha_max + np.log(np.sum(np.exp(letter_alpha + Xword[j-1]), axis=1))
-	print(Xword_alpha)
+
 	return Xword_alpha # return alpha values for j=0..m for XW
 
 def backward_pass(Xword, Wj, Tij): # calculate beta(j, s) # values are not exactly correct...?
@@ -35,13 +37,33 @@ def backward_pass(Xword, Wj, Tij): # calculate beta(j, s) # values are not exact
   		letter_beta = Xword_beta[j+1] + Tij.T
   		letter_beta_max = np.max(letter_beta, axis=1)
   		letter_beta = (letter_beta.T - letter_beta_max).T
-  		Xword_beta = letter_beta_max + np.log(np.sum(np.exp(letter_beta + Xword[j+1]), axis=1))
+  		Xword_beta[j] = letter_beta_max + np.log(np.sum(np.exp(letter_beta + Xword[j+1]), axis=1))
 
-  	print(Xword_beta)
-	return Xword_beta # return alpha values for j=0..m for XW
+	return Xword_beta # return beta values for j=m-1..0 for XW
+
+def psi_fn(Xword, y, Tij): # numerator for calculating likelihood value
+	final = 0
+	for j in range(len(Xword)):
+		if j > 0:
+			final += Tij[y[j]][y[j-1]]
+	return np.exp(total)
+
+def partition_fn(alpha, Xword): # denominator (Z) that normalizes psi_fn
+	return np.sum(np.exp(alpha[-1] + Xword[-1]))
+
+def logpy_X(Xword, y, Tij):
+	alpha = forward_pass(Xword, Tij)
+	return np.log(psi_fn(y, Xword, Tij) / partition_fn(alpha, Xword))
+
+def logpy_X_sum(Wj, Tij, X_train, y, index):
+	final = 0
+	for j in range(index):
+		Xword = np.inner(X_train[j], Wj)
+		final += logpy_X(Xword, y[j], Tij)
+	return final
 
 if __name__ == '__main__':
 	Wj, Tij = load_Q2_model()
 	X_train = load_Q2_data()
 	forward_pass(X_train[1], Wj, Tij)
-	backward_pass(X_train[2], Wj, Tij)
+	backward_pass(X_train[1], Wj, Tij)
