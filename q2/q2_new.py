@@ -17,8 +17,8 @@ def forward_pass(Xword, Wj, Tij):  # calculate alpha(j, s) # values are not exac
     Xword = np.inner(Xword_hold, Wj)  # inner product of XW and Wj weights
 
     for j in range(1, len(Xword)):  # for each letter j in XW m
-        # print("j",j,Xword[j-1])
-        letter_alpha = Xword_alpha[j-1] + Tij
+        print("j",j,Xword[j-1])
+        letter_alpha = Xword_alpha[j-1] + Tij.T
         letter_alpha_max = np.max(letter_alpha, axis=1)
         letter_alpha = (letter_alpha.T - letter_alpha_max).T
         Xword_alpha[j] = letter_alpha_max + np.log(np.sum(np.exp(letter_alpha + Xword[j-1]), axis=1))
@@ -73,5 +73,5 @@ def logpy_X_sum(Wj, Tij, X_train, y, index):
 if __name__ == '__main__':
     Wj, Tij = load_Q2_model()
     X_train = load_Q2_data()
-    forward_pass(X_train[1], Wj, Tij)
+    print(forward_pass(X_train[1], Wj, Tij))
     backward_pass(X_train[1], Wj, Tij)
