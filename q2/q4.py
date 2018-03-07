@@ -8,7 +8,8 @@ from sklearn.svm import LinearSVC
 
 from utils import flatten_dataset, reshape_dataset, read_data_formatted
 from utils import load_dataset_as_dictionary, prepare_dataset_from_dictionary, calculate_word_lengths_from_dictionary
-from utils import evaluate_crf, transform_dataset
+from utils import evaluate_linearSVM, transform_dataset
+from q1 import predict, get_weights
 
 CHAR_CV_SCORES = []
 WORD_CV_SCORES = []
@@ -50,11 +51,20 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     y = np.array(y)[:, 0]
 
     y_preds = model.predict(X)
-    char_acc, word_acc = evaluate_crf(y, y_preds, word_ids)
+    char_acc, word_acc = evaluate_linearSVM(y, y_preds, word_ids)
 
     CHAR_CV_SCORES.append(char_acc)
     WORD_CV_SCORES.append(word_acc)
 
+# evaluate CRF decoder
+def evaluate_CRF(C=1.0, transform_trainset=False, limit=None):
+    X = []
+    y = []
+
+    train_data, test_data = load_dataset_as_dictionary()
+    
+    X_temp, Wj, Tij = get_weights()
+    print(len(train_data))
 
 def plot_scores(X_range, scale='log', xlabel='C'):
     plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
@@ -81,10 +91,12 @@ if __name__ == '__main__':
     ''' Linear SVM '''
     limits = [0, 500, 1000, 1500, 2000]  # [1.0, 10.0, 100.0, 1000.0]
 
-    CHAR_CV_SCORES.clear()
-    WORD_CV_SCORES.clear()
+    CHAR_CV_SCORES = []
+    WORD_CV_SCORES = []
 
-    for limit in limits:
-        train_evaluate_linear_svm(C=1.0, transform_trainset=True, limit=limit)
+    evaluate_CRF(C=1.0, transform_trainset=False, limit=500)
 
-    plot_scores(limits, scale=None, xlabel='distortion count')
+    # for limit in limits:
+    #     train_evaluate_linear_svm(C=1.0, transform_trainset=True, limit=limit)
+
+    # plot_scores(limits, scale=None, xlabel='distortion count')

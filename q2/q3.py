@@ -1,7 +1,7 @@
 from subprocess import run, PIPE
 import os
 import matplotlib.pyplot as plt
-plt.style.use('seaborn-paper')
+# plt.style.use('seaborn-paper')
 
 import numpy as np
 from sklearn.svm import LinearSVC
@@ -54,7 +54,7 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     y = []
 
     X_train, Y_train = read_data_formatted('train_struct.txt')
-    X_test, Y_test = read_data_formatted('test_struct.txt')
+    X_test, Y_test = read_data_formatted('test_struct.txt'3)
 
     word_ids = []
 

@@ -147,7 +147,6 @@ if __name__ == '__main__':
     import numpy as np
 
     X, w, t = get_weights_formatted()
-
     soln = predict(X, w, t)
 
     with open("result/decode_output.txt", "w") as text_file:

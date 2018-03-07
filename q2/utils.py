@@ -86,7 +86,6 @@ def flatten_dataset(X):
     x = np.array(x)
     return x
 
-
 def reshape_dataset(X, ref_y):
     x = [[]]
     index = 0
@@ -98,7 +97,6 @@ def reshape_dataset(X, ref_y):
             index += 1
 
         x.append([])
-
     return x
 
 
@@ -109,20 +107,13 @@ def load_dataset_as_dictionary():
         lines = f.readlines()
 
     for l in lines:
-        # get letter
         letter = re.findall(r'[a-z]', l)
-        # get all ints
         l = re.findall(r'\d+', l)
-        # store letter_id (unique id)
         letter_id = l[0]
-        # store next letter id
         next_id = l[1]
-        # get current word id
         word_id = l[2]
-        # get pos for current letter
         pos = l[3]
         p_ij = np.array(l[4:], dtype=np.float32)
-        # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
         train_data[letter_id] = [letter, next_id, word_id, pos, p_ij]
 
     test_data = OrderedDict()
@@ -183,7 +174,6 @@ def prepare_dataset_from_dictionary(dataset, word_length_list):
         dataset_pointer += num_words
 
     return X, y
-
 
 def compute_accuracy(y_preds, y_true):
     word_count = 0
@@ -251,7 +241,7 @@ def evaluate_structured(f_true, f_pred):
         return char_acc, word_acc
 
 
-def evaluate_crf(y_true, y_preds, word_ids):
+def evaluate_linearSVM(y_true, y_preds, word_ids):
     true_word_list = []
     pred_word_list = []
 
