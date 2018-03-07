@@ -6,6 +6,7 @@ import pdb
 import sys
 
 Q2_TRAIN_PATH = 'data/train.txt'
+Q2_TEST_PATH = 'data/test.txt'
 Q2_MODEL_PATH = 'data/model.txt'
 
 def load_Q2_model():
@@ -38,7 +39,26 @@ def load_Q2_data():
 		else:
 			train_data[word_id] = [[letter_id, pos, pixel_ij]]
 
-	return train_data
+	with open(Q2_TEST_PATH, 'r') as f:
+		data = f.readlines()
+
+	test_data = OrderedDict()
+
+	for l in data:
+		letter = re.findall(r'[a-z]', l)
+		integers = re.findall(r'\d+', l)
+		integers = list(map(int, integers))
+		letter_id = integers[0]
+		next_id = integers[1]
+		word_id = integers[2]
+		pos = integers[3]
+		pixel_ij = integers[4:]
+		if word_id in train_data:
+			test_data[word_id].append([letter_id, pos, pixel_ij])
+		else:
+			test_data[word_id] = [[letter_id, pos, pixel_ij]]
+
+	return train_data, test_data
 
 def parse_Q2_data(train_data):
 	X_train = np.zeros((25943, 128), dtype=np.float64)
