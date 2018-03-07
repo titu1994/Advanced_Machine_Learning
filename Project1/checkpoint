@@ -1,2 +1,0 @@
-model_checkpoint_path: "crf.ckpt-0"
-all_model_checkpoint_paths: "crf.ckpt-0"

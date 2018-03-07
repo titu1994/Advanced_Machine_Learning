@@ -63,7 +63,7 @@ def compute_brute_value(temp, X, W, T):
 
 if __name__ == '__main__':
 
-    preds_max_sum = max_sum_decoder(X, W, T)
+    preds_max_sum = max_sum_decoder(X, W, Tij)
 
     for i,p in enumerate(preds_max_sum):
         print("i=%d : Predicted = %s" % (i+1, chr(p+ord('a'))))
