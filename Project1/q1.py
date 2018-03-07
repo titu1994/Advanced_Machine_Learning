@@ -8,10 +8,11 @@ num_labels = 26
 m = X.shape[0]  # 100
 dim = X.shape[1]  # 128
 
-def max_sum_decoder(X, W, T):
+def max_sum_decoder():
     opt = np.zeros([X.shape[0], W.shape[0]], dtype=np.int32)
     nodeweights = np.zeros([X.shape[0], W.shape[0]])
     values = np.zeros([X.shape[0], W.shape[0]])
+    objective = np.zeros((X.shape[0]))
     for j in range(W.shape[0]):
         nodeweights[0, j] = np.dot(X[0], W[j])
     values[0] = nodeweights[0].copy()
@@ -26,11 +27,13 @@ def max_sum_decoder(X, W, T):
     k = np.argmax(nodeweights[X.shape[0] - 1])
     predictions = np.zeros([X.shape[0]], dtype=np.int32)
     predictions[X.shape[0] - 1] = k
+    objective[X.shape[0]-1] = values[X.shape[0]-1, k]
     for i in range(X.shape[0] - 1, 0, -1):
         k = opt[i, k]
         predictions[i - 1] = k
+        objective[i-1] = values[i,k]
+    return predictions,objective
 
-    return predictions
 
 def brute_force(X,W,T):
     predictions = np.zeros(X.shape[0], dtype=np.int32)
@@ -63,12 +66,18 @@ def compute_brute_value(temp, X, W, T):
 
 if __name__ == '__main__':
 
-    preds_max_sum = max_sum_decoder(X, W, T)
+    preds_max_sum, objectives = max_sum_decoder()
+    print(np.max(objectives))
+    print(preds_max_sum)
+    with open("decode_output.txt","w") as w:
+        for p in preds_max_sum:
+            w.write(str(p+1))
+            w.write("\n")
 
     for i,p in enumerate(preds_max_sum):
         print("i=%d : Predicted = %s" % (i+1, chr(p+ord('a'))))
 
-    for i,p in enumerate(brute_force(X[:2], W, Tij)):
+    for i,p in enumerate(brute_force(X[:4], W, Tij)):
         print("i=%d : Brute force predicted = %s" % (i+1, chr(p+ord('a'))))
 
     # print("Maximum objective score : ", objective.max())
