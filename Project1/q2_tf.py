@@ -78,7 +78,6 @@ with tf.Session() as sess:
 
     sess.run(tf.global_variables_initializer())
 
-<<<<<<< HEAD
     grad_variables = sess.run(gradients)
     print("Weights", grad_variables[0][0].shape)
     print("Transition", grad_variables[1][0].shape)
