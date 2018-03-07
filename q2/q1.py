@@ -78,8 +78,7 @@ def predict(X, w, t):
 
     while (cur_word_pos > 0):
         for prev_letter in range(26):
-            if (abs(cur_val - M[prev_word_pos][prev_letter] - t[prev_letter][cur_letter] - np.inner(X[cur_word_pos], w[
-                cur_letter])) < 0.00001):
+            if (abs(cur_val - M[prev_word_pos][prev_letter] - t[prev_letter][cur_letter] - np.inner(X[cur_word_pos], w[cur_letter])) < 0.00001):
                 solution.insert(0, prev_letter)
                 cur_letter = prev_letter
                 cur_word_pos -= 1
@@ -142,6 +141,7 @@ def get_weights_formatted():
     w_array = parse_w(w)
     t_array = parse_t(t)
     return x_array, w_array, t_array
+
 
 if __name__ == '__main__':
     import numpy as np

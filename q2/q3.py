@@ -6,7 +6,10 @@ plt.style.use('seaborn-paper')
 import numpy as np
 from sklearn.svm import LinearSVC
 
-from utils import read_data_formatted, flatten_dataset, reshape_dataset
+from q1 import predict
+from q2 import get_optimal_params, w_matrix, t_matrix
+
+from utils import read_data_formatted, flatten_dataset, reshape_dataset, get_params
 from utils import evaluate_structured, compute_accuracy
 
 struct_model_path = "data/model_trained.txt"
@@ -57,7 +60,6 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     y_train = flatten_dataset(Y_train)
 
     x_test = flatten_dataset(X_test)
-    y_test = flatten_dataset(Y_test)
 
     # if transform_trainset:
     #     assert limit is not None, "If dataset is being transformed, then limit must be set"
@@ -70,7 +72,7 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     y_preds = model.predict(x_test)
 
     y_preds = reshape_dataset(y_preds, Y_test)  # Y_test represents the word indices
-    char_acc, word_acc = compute_accuracy(y_preds, Y_test)
+    word_acc, char_acc = compute_accuracy(y_preds, Y_test)
 
     CHAR_CV_SCORES.append(char_acc)
     WORD_CV_SCORES.append(word_acc)
@@ -115,7 +117,7 @@ if __name__ == '__main__':
     #
     # plot_scores(Cs)
     #
-    # ''' Linear Multi-Class SVM '''
+    ''' Linear Multi-Class SVM '''
     # # Used for grid search and plotting
     # Cs = [1.0, 10.0, 100.0, 1000.0]
     #
@@ -131,5 +133,43 @@ if __name__ == '__main__':
     # plot_scores(Cs)
 
     ''' CRF '''
+
+    X_train, Y_train = read_data_formatted('train_struct.txt')
+    X_test, Y_test = read_data_formatted('test_struct.txt')
+    params = get_params()
+
+    x_test = flatten_dataset(X_test)
+    y_test = flatten_dataset(Y_test)
+
+    # Run optimization, should take 3+ hours so commented out.
+    '''
+    cvals = [1, 10, 100, 1000]
+    for elt in cvals:
+        p2b.optimize(params, X_train, y_train, elt, 'solution' + str(elt))
+        print("done with" + str(elt))
+    '''
+
+    # check accuracy
+    Cs = [1, 10, 100, 1000]
+
+    CHAR_CV_SCORES.clear()
+    WORD_CV_SCORES.clear()
+
+    for C in Cs:
+        print("\nComputing predictions for C = %d" % (C))
+        params = get_optimal_params('solution' + str(C))
+        w = w_matrix(params)
+        t = t_matrix(params)
+        prediction = predict(x_test, w, t)
+
+        prediction = reshape_dataset(prediction, Y_test)  # y_test is for getting word ids
+
+        word_acc, char_acc = compute_accuracy(prediction, Y_test)
+
+        CHAR_CV_SCORES.append(char_acc)
+        WORD_CV_SCORES.append(word_acc)
+
+    plot_scores(Cs)
+
 
 

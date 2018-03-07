@@ -108,7 +108,7 @@ def compute_accuracy(y_preds, y_true):
             correct_word_count += 1
 
         letter_count += len(y_p)
-        correct_letter_count += np.sum(y_p == y_p)
+        correct_letter_count += np.sum(y_p == y_t)
 
     return correct_word_count / word_count, correct_letter_count / letter_count
 

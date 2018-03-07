@@ -239,6 +239,8 @@ if __name__ == '__main__':
     #check_gradient(params, X, y)
     #timed_gradient_calculation(params, X, y)
 
+    '''  '''
+
     ''' optimization '''
     X_train, y_train = read_data_formatted('train_struct.txt')
     X_test, y_test = read_data_formatted('test_struct.txt')
