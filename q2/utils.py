@@ -1,12 +1,17 @@
 import numpy as np
 import re
 import os
-from collections import defaultdict
+from scipy.misc import imrotate
+from collections import defaultdict, OrderedDict
 
 TRANSFORM_PATH = 'data/transform.txt'
+Q2_TRAIN_PATH = "data/train.txt"
+Q2_TEST_PATH = "data/test.txt"
+
 
 if not os.path.exists('result'):
     os.makedirs('result')
+
 
 def read_data(file_name):
     file = open('data/' + file_name, 'r')
@@ -81,6 +86,7 @@ def flatten_dataset(X):
     x = np.array(x)
     return x
 
+
 def reshape_dataset(X, ref_y):
     x = [[]]
     index = 0
@@ -94,6 +100,89 @@ def reshape_dataset(X, ref_y):
         x.append([])
 
     return x
+
+
+def load_dataset_as_dictionary():
+    train_data = OrderedDict()
+
+    with open(Q2_TRAIN_PATH, 'r') as f:
+        lines = f.readlines()
+
+    for l in lines:
+        # get letter
+        letter = re.findall(r'[a-z]', l)
+        # get all ints
+        l = re.findall(r'\d+', l)
+        # store letter_id (unique id)
+        letter_id = l[0]
+        # store next letter id
+        next_id = l[1]
+        # get current word id
+        word_id = l[2]
+        # get pos for current letter
+        pos = l[3]
+        p_ij = np.array(l[4:], dtype=np.float32)
+        # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
+        train_data[letter_id] = [letter, next_id, word_id, pos, p_ij]
+
+    test_data = OrderedDict()
+
+    with open(Q2_TEST_PATH, 'r') as f:
+        lines = f.readlines()
+
+    for l in lines:
+        letter = re.findall(r'[a-z]', l)
+        l = re.findall(r'\d+', l)
+        letter_id = l[0]
+        next_id = l[1]
+        word_id = l[2]
+        pos = l[3]
+        p_ij = np.array(l[4:], dtype=np.float32)
+        # store letter in dictionary as letter_id -> letter, next_id, word_id, position, pixel_values
+        test_data[letter_id] = [letter, next_id, word_id, pos, p_ij]
+
+    return train_data, test_data
+
+
+def calculate_word_lengths_from_dictionary(dataset):
+    word_list = []
+    prev_word = -100
+
+    for i, (key, value) in enumerate(dataset.items()):
+        letter, next_id, word_id, pos, p_ij = value
+
+        if word_id == prev_word:
+            word_list[-1] += 1
+        else:
+            word_list.append(1)
+            prev_word = word_id
+
+    return word_list
+
+
+def prepare_dataset_from_dictionary(dataset, word_length_list):
+    max_length = max(word_length_list)
+    num_samples = len(word_length_list)
+
+    X = np.zeros((num_samples, max_length, 128), dtype='float32')
+    y = np.zeros((num_samples, max_length), dtype='int32')
+
+    dataset_pointer = 0
+    dataset_values = list(dataset.values())
+
+    for i in range(num_samples):
+        num_words = word_length_list[i]
+
+        for j in range(num_words):
+            letter, next_id, word_id, pos, p_ij = dataset_values[j + dataset_pointer]
+            X[i, j, :] = p_ij
+
+            letter_to_int = int(ord(letter[0]) - ord('a'))
+            y[i, j] = letter_to_int
+
+        dataset_pointer += num_words
+
+    return X, y
 
 
 def compute_accuracy(y_preds, y_true):
@@ -161,6 +250,43 @@ def evaluate_structured(f_true, f_pred):
 
         return char_acc, word_acc
 
+
+def evaluate_crf(y_true, y_preds, word_ids):
+    true_word_list = []
+    pred_word_list = []
+
+    prev_word = -100
+
+    for i, (true, pred) in enumerate(zip(y_true, y_preds)):
+        true_word = int(word_ids[i])
+        if true_word == prev_word:
+            true_word_list[-1].append(true)
+            pred_word_list[-1].append(pred)
+        else:
+            true_word_list.append([true])
+            pred_word_list.append([pred])
+            prev_word = true_word
+
+    char_correct_count = 0
+    word_correct_count = 0
+
+    for true_char, pred_char in zip(y_true, y_preds):
+        if true_char == pred_char:
+            char_correct_count += 1
+
+    for true_word, pred_word in zip(true_word_list, pred_word_list):
+        if np.array_equal(true_word, pred_word):
+            word_correct_count += 1
+
+    char_acc = (char_correct_count) / float(y_true.shape[0])
+    word_acc = float(word_correct_count) / float(len(true_word_list))
+
+    print("Character level accuracy : %0.4f (%d / %d)" % (char_acc, char_correct_count, y_true.shape[0]))
+    print("Word level accuracy : %0.4f (%d / %d)" % (word_acc, word_correct_count, len(true_word_list)))
+
+    return char_acc, word_acc
+
+
 def _rotate(Xi, alpha):
     Xi = Xi.reshape((16, 8))
     alpha = float(alpha)
@@ -191,24 +317,24 @@ def _translation(Xi, offsets):
     y = Xi
 
     y[max(0, x_offset): min(x_height, x_height + x_offset),
-      max(0, y_offset): min(x_width, x_width + y_offset)] = Xi[max(0, 1 - x_offset): min(x_height, x_height - x_offset),
-                                                               max(0, 1 - y_offset): min(x_width, x_width - y_offset)]
+    max(0, y_offset): min(x_width, x_width + y_offset)] = Xi[max(0, 1 - x_offset): min(x_height, x_height - x_offset),
+                                                          max(0, 1 - y_offset): min(x_width, x_width - y_offset)]
 
     y[x_offset: x_height, y_offset: x_width] = Xi[0: x_height - x_offset, 0: x_width - y_offset]
 
     return y
 
 
-def transform_dataset(train_set, limit, word_ids):
+def transform_dataset(train_set, limit):
     if limit == 0:
         return train_set
 
     # build an inverse word dictionary
-    # word_dict = defaultdict(list)
+    word_dict = defaultdict(list)
 
-    # for key, value in train_set.items():
-        # word_id = value[2]
-        # word_dict[word_id].append(key)
+    for key, value in train_set.items():
+        word_id = value[2]
+        word_dict[word_id].append(key)
 
     with open(TRANSFORM_PATH, 'r') as f:
         lines = f.readlines()
@@ -218,12 +344,11 @@ def transform_dataset(train_set, limit, word_ids):
     for line in lines:
         splits = line.split()
         action = splits[0]
-        target_word = int(splits[1])
-        # args = int(splits[2:])
-        args = list(map(int, splits[2:]))
+        target_word = splits[1]
+        args = splits[2:]
 
         # get all of the ids in train set which have this word in them
-        target_image_ids = word_ids[target_word]
+        target_image_ids = word_dict[target_word]
 
         for image_id in target_image_ids:
             value_set = train_set[image_id]
@@ -241,39 +366,3 @@ def transform_dataset(train_set, limit, word_ids):
             train_set[image_id] = value_set
 
     return train_set
-
-#
-# def evaluate_crf(y_true, y_preds, word_ids):
-#     true_word_list = []
-#     pred_word_list = []
-#
-#     prev_word = -100
-#
-#     for i, (true, pred) in enumerate(zip(y_true, y_preds)):
-#         true_word = int(word_ids[i])
-#         if true_word == prev_word:
-#             true_word_list[-1].append(true)
-#             pred_word_list[-1].append(pred)
-#         else:
-#             true_word_list.append([true])
-#             pred_word_list.append([pred])
-#             prev_word = true_word
-#
-#     char_correct_count = 0
-#     word_correct_count = 0
-#
-#     for true_char, pred_char in zip(y_true, y_preds):
-#         if true_char == pred_char:
-#             char_correct_count += 1
-#
-#     for true_word, pred_word in zip(true_word_list, pred_word_list):
-#         if np.array_equal(true_word, pred_word):
-#             word_correct_count += 1
-#
-#     char_acc = (char_correct_count) / float(y_true.shape[0])
-#     word_acc = float(word_correct_count) / float(len(true_word_list))
-#
-#     print("Character level accuracy : %0.4f (%d / %d)" % (char_acc, char_correct_count, y_true.shape[0]))
-#     print("Word level accuracy : %0.4f (%d / %d)" % (word_acc, word_correct_count, len(true_word_list)))
-#
-#     return char_acc, word_acc
