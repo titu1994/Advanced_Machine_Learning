@@ -232,10 +232,10 @@ def get_optimal_params(name):
 
 
 if __name__ == '__main__':
-    X, y = read_data_formatted('train_struct.txt')
-    params = get_params()
 
     ''' check gradients and write to file '''
+    #X, y = read_data_formatted('train_struct.txt')
+    #params = get_params()
     #check_gradient(params, X, y)
     #timed_gradient_calculation(params, X, y)
 
