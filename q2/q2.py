@@ -252,7 +252,7 @@ if __name__ == '__main__':
     '''
     # optimize(params, X_train, y_train, C=1000, name='solution1000')
 
-    params = get_optimal_params('solution1000')
+    params = get_optimal_params('solution')
     w = w_matrix(params)
     t = t_matrix(params)
 
@@ -268,9 +268,9 @@ if __name__ == '__main__':
     with open("result/prediction.txt", "w") as text_file:
         for i, elt in enumerate(y_preds):
             # convert to characters
-            elt = [str(chr(c + ord('A'))) for c in elt]
-            text_file.write(str(elt))
-            text_file.write("\n")
+            for word in elt:
+                text_file.write(str(word))
+                text_file.write("\n")
 
     print("Test accuracy : ", compute_accuracy(y_preds, y_test))
 

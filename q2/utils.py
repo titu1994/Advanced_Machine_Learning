@@ -5,6 +5,7 @@ from scipy.misc import imrotate
 from collections import defaultdict, OrderedDict
 
 TRANSFORM_PATH = 'data/transform.txt'
+Q1_TRAIN_PATH = "data/decode_input.txt"
 Q2_TRAIN_PATH = "data/train.txt"
 Q2_TEST_PATH = "data/test.txt"
 
@@ -98,6 +99,22 @@ def reshape_dataset(X, ref_y):
 
         x.append([])
     return x
+
+
+def load_dummy_data():
+    with open(Q1_TRAIN_PATH, 'r') as f:
+        lines = f.readlines()
+
+    Xi = lines[:100 * 128]
+    Wj = lines[100 * 128: 26 * 128 + 100 * 128]
+    Tij = lines[26 * 128 + 100 * 128:]
+
+    Xi = np.array(Xi, dtype=np.float32).reshape((100, 128))
+    Wj = np.array(Wj, dtype=np.float32).reshape((26, 128))
+    Tij = np.array(Tij, dtype=np.float32).reshape((26, 26), order='F')
+
+    print("Xi", Xi.shape, "Wj", Wj.shape, "Tij", Tij.shape)
+    return Xi, Wj, Tij
 
 
 def load_dataset_as_dictionary():

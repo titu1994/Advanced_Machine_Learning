@@ -107,35 +107,35 @@ if __name__ == '__main__':
     """ Question 3 """
 
     ''' Structured SVM '''
-    # # Used for grid search and plotting
-    # Cs = [1.0, 10.0, 100.0, 1000.0] # [1.0, 10.0, 100.0, 1000.0]
-    #
-    # # Used for getting maximum test scores at word and character level
-    # #Cs = [1000.0]
-    #
-    # CHAR_CV_SCORES.clear()
-    # WORD_CV_SCORES.clear()
-    #
-    # for C in Cs:
-    #     train_svm_struct_model(C=C)
-    #     evaluate_svm_struct_model()
-    #
-    # plot_scores(Cs)
-    #
+    # Used for grid search and plotting
+    Cs = [1.0, 10.0, 100.0, 1000.0] # [1.0, 10.0, 100.0, 1000.0]
+
+    # Used for getting maximum test scores at word and character level
+    #Cs = [1000.0]
+
+    CHAR_CV_SCORES.clear()
+    WORD_CV_SCORES.clear()
+
+    for C in Cs:
+        train_svm_struct_model(C=C)
+        evaluate_svm_struct_model()
+
+    plot_scores(Cs)
+
     ''' Linear Multi-Class SVM '''
-    # # Used for grid search and plotting
-    # Cs = [1.0, 10.0, 100.0, 1000.0]
-    #
-    # # Used for getting maximum test scores at word and character level
-    # # Cs = [1.0]
-    #
-    # CHAR_CV_SCORES.clear()
-    # WORD_CV_SCORES.clear()
-    #
-    # for C in Cs:
-    #     train_evaluate_linear_svm(C=C)
-    #
-    # plot_scores(Cs)
+    # Used for grid search and plotting
+    Cs = [1.0, 10.0, 100.0, 1000.0]
+
+    # Used for getting maximum test scores at word and character level
+    # Cs = [1.0]
+
+    CHAR_CV_SCORES.clear()
+    WORD_CV_SCORES.clear()
+
+    for C in Cs:
+        train_evaluate_linear_svm(C=C)
+
+    plot_scores(Cs)
 
     ''' CRF '''
 
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     x_test = flatten_dataset(X_test)
     y_test = flatten_dataset(Y_test)
 
-    # Run optimization, should take 3+ hours so commented out.
+    # Run optimization, should take 3.5+ hours so commented out.
     '''
     cvals = [1, 10, 100, 1000]
     for elt in cvals:
