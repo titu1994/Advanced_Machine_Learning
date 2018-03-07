@@ -1,13 +1,13 @@
 from subprocess import run, PIPE
 import os
+import sys
 import matplotlib.pyplot as plt
-plt.style.use('seaborn-paper')
 
 import numpy as np
 from sklearn.svm import LinearSVC
 
 from utils import read_data_formatted, flatten_dataset, reshape_dataset
-from utils import evaluate_structured, compute_accuracy
+from utils import evaluate_structured, compute_accuracy, transform_dataset
 
 struct_model_path = "data/model_trained.txt"
 struct_test_predictions_path = "data/test_predictions.txt"
@@ -53,16 +53,21 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     X_train, Y_train = read_data_formatted('train_struct.txt')
     X_test, Y_test = read_data_formatted('test_struct.txt')
 
+    word_ids = []
+
+    for i in range(len(X_train)):
+        word_ids.append(len(X_train[i]))
+
     x_train = flatten_dataset(X_train)
     y_train = flatten_dataset(Y_train)
 
     x_test = flatten_dataset(X_test)
     y_test = flatten_dataset(Y_test)
 
-    # if transform_trainset:
-    #     assert limit is not None, "If dataset is being transformed, then limit must be set"
-    #
-    #     train_data = transform_dataset(train_data, limit)
+    if transform_trainset:
+        assert limit is not None, "If dataset is being transformed, then limit must be set"
+    
+        train_data = transform_dataset(X_train, limit, word_ids)
 
     model = LinearSVC(C=C, max_iter=1000, verbose=10, random_state=0)
     model.fit(x_train, y_train)
