@@ -10,7 +10,7 @@ from q1 import predict
 from q2 import get_optimal_params, w_matrix, t_matrix
 
 from utils import read_data_formatted, flatten_dataset, reshape_dataset, get_params
-from utils import evaluate_structured, compute_accuracy
+from utils import evaluate_structured, compute_accuracy, transform_dataset
 
 struct_model_path = "data/model_trained.txt"
 struct_test_predictions_path = "data/test_predictions.txt"
@@ -56,15 +56,20 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     X_train, Y_train = read_data_formatted('train_struct.txt')
     X_test, Y_test = read_data_formatted('test_struct.txt')
 
+    word_ids = []
+
+    for i in range(len(X_train)):
+        word_ids.append(len(X_train[i]))
+
     x_train = flatten_dataset(X_train)
     y_train = flatten_dataset(Y_train)
 
     x_test = flatten_dataset(X_test)
 
-    # if transform_trainset:
-    #     assert limit is not None, "If dataset is being transformed, then limit must be set"
-    #
-    #     train_data = transform_dataset(train_data, limit)
+    if transform_trainset:
+        assert limit is not None, "If dataset is being transformed, then limit must be set"
+
+        train_data = transform_dataset(X_train, limit, word_ids)
 
     model = LinearSVC(C=C, max_iter=1000, verbose=10, random_state=0)
     model.fit(x_train, y_train)
