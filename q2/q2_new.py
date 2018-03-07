@@ -47,7 +47,7 @@ def psi_fn(Xword, y, Tij):  # psi_fn (numerator) for calculating likelihood valu
     for j in range(len(Xword)):
         if j > 0:
             final += Tij[y[j]][y[j - 1]]
-    return np.exp(total)
+    return np.exp(final)
 
 
 def partition_fn(Xword, alpha):  # Z (denominator) that normalizes psi_fn
