@@ -5,7 +5,8 @@ from sklearn.svm import LinearSVC
 
 from utils import flatten_dataset, reshape_dataset, read_data_formatted, compute_accuracy, get_params
 from utils import load_dataset_as_dictionary, prepare_dataset_from_dictionary, calculate_word_lengths_from_dictionary
-from utils import evaluate_linearSVM, transform_dataset
+from utils import evaluate_linearSVM, transform_dataset, transform_crf_dataset
+
 from q1 import predict, get_weights
 from q2 import get_optimal_params, w_matrix, t_matrix, optimize
 
@@ -87,22 +88,21 @@ def plot_scores(X_range, scale='log', xlabel='C'):
 if __name__ == '__main__':
 
     ''' Linear SVM '''
-    limits = [500, 1000, 1500, 2000]
+    limits = [ 2000 ]
 
     CHAR_CV_SCORES = []
     WORD_CV_SCORES = []
 
     ''' linear SVM '''
-    # for limit in limits:
-    #     train_evaluate_linear_svm(C=1.0, transform_trainset=True, limit=limit)
-    #
-    # plot_scores(limits, scale=None, xlabel='distortion count')
+    for limit in limits:
+        train_evaluate_linear_svm(C=1.0, transform_trainset=True, limit=limit)
+
+    plot_scores(limits, scale=None, xlabel='distortion count')
 
     ''' CRF '''
     CHAR_CV_SCORES.clear()
     WORD_CV_SCORES.clear()
 
-    X_train, Y_train = read_data_formatted('train_struct.txt')
     X_test, Y_test = read_data_formatted('test_struct.txt')
 
     print("Computing scores for best model with no distortion")
@@ -112,27 +112,18 @@ if __name__ == '__main__':
     w = w_matrix(params)
     t = t_matrix(params)
 
-    y_preds = predict(x_test, w, t)
-    y_preds = reshape_dataset(y_preds, Y_test)
+    #y_preds = predict(x_test, w, t)
+    #y_preds = reshape_dataset(y_preds, Y_test)
 
-    word_acc, char_acc = compute_accuracy(y_preds, Y_test)
-    CHAR_CV_SCORES.append(char_acc)
-    WORD_CV_SCORES.append(word_acc)
-
-    # prepare for transforming and cleaning datasets
-    train_data, test_data = load_dataset_as_dictionary()
-    train_word_list = calculate_word_lengths_from_dictionary(train_data)
-
-    params = get_params()
-    w = w_matrix(params)
-    t = t_matrix(params)
+    #word_acc, char_acc = compute_accuracy(y_preds, Y_test)
+    #CHAR_CV_SCORES.append(char_acc)
+    #WORD_CV_SCORES.append(word_acc)
 
     for limit in limits:
         print("Beginning distortaion of first %d ids" % (limit))
-        train_data = transform_dataset(train_data, limit)
-        x_train, y_train = prepare_dataset_from_dictionary(train_data, train_word_list)
 
-        optimize(params, x_train, y_train, C=1000, name='solution_%d_distortion' % limit)
+        X_train, Y_train = read_data_formatted('train_struct_%d.txt' % (limit))
+        optimize(params, X_train, Y_train, C=1000, name='solution_%d_distortion' % limit)
 
         params = get_optimal_params('solution_%d_distortion' % limit)
         w = w_matrix(params)
@@ -148,8 +139,6 @@ if __name__ == '__main__':
 
     limits = [0] + limits
     plot_scores(limits, scale=None, xlabel='distortion count')
-
-
 
 
 

@@ -45,9 +45,10 @@ def read_data(file_name):
     return y, qids, X
 
 
-def read_data_formatted(file_name):
+def read_data_formatted(file_name, return_ids=False):
     # get initial output
     y, qids, X = read_data(file_name)
+    ids = {}
     y_tot = []
     X_tot = []
     current = 0
@@ -56,6 +57,10 @@ def read_data_formatted(file_name):
     X_tot.append([])
 
     for i in range(len(y)):
+
+        if qids[i] not in ids:
+            ids[qids[i]] = current
+
         y_tot[current].append(y[i])
         X_tot[current].append(X[i])
 
@@ -66,7 +71,10 @@ def read_data_formatted(file_name):
             X_tot.append([])
             current = current + 1
 
-    return X_tot, y_tot
+    if not return_ids:
+        return X_tot, y_tot
+    else:
+        return X_tot, y_tot, ids
 
 
 # parameter set for 2a
@@ -182,7 +190,7 @@ def prepare_dataset_from_dictionary(dataset, word_length_list):
 
         for j in range(num_words):
             letter, next_id, word_id, pos, p_ij = dataset_values[j + dataset_pointer]
-            X[i].append(np.array(p_ij))
+            X[i].append(np.array(p_ij, dtype='int32'))
 
             letter_to_int = int(ord(letter[0]) - ord('a'))
             y[i].append(letter_to_int)
@@ -335,7 +343,6 @@ def _translation(Xi, offsets):
 
     return y
 
-
 def transform_dataset(train_set, limit):
     if limit == 0:
         return train_set
@@ -377,3 +384,36 @@ def transform_dataset(train_set, limit):
             train_set[image_id] = value_set
 
     return train_set
+
+
+
+def transform_crf_dataset(X, id_map, limit):
+    if limit == 0:
+        return X
+
+    with open(TRANSFORM_PATH, 'r') as f:
+        lines = f.readlines()
+
+    lines = lines[:limit]
+
+    for line in lines:
+        splits = line.split()
+        action = splits[0]
+        target_word = splits[1]
+        args = splits[2:]
+
+        target_id = int(target_word)
+        index = id_map[target_id]
+
+        # get all of the ids in train set which have this word in them
+        for i, image in enumerate(X[index]):
+            if action == 'r':
+                alpha = args[0]
+                image = _rotate(image, alpha)
+            else:
+                offsets = args
+                image = _translation(image, offsets)
+
+            X[index][i] = image.flatten()
+
+    return X
