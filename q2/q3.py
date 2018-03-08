@@ -115,11 +115,11 @@ if __name__ == '__main__':
     CHAR_CV_SCORES.clear()
     WORD_CV_SCORES.clear()
 
-    for C in Cs:
-        train_svm_struct_model(C=C)
-        evaluate_svm_struct_model()
-
-    plot_scores(Cs)
+    # for C in Cs:
+    #     train_svm_struct_model(C=C)
+    #     evaluate_svm_struct_model()
+    #
+    # plot_scores(Cs)
 
     ''' Linear Multi-Class SVM '''
     # Used for grid search and plotting
@@ -131,19 +131,16 @@ if __name__ == '__main__':
     CHAR_CV_SCORES.clear()
     WORD_CV_SCORES.clear()
 
-    for C in Cs:
-        train_evaluate_linear_svm(C=C)
-
-    plot_scores(Cs)
+    # for C in Cs:
+    #     train_evaluate_linear_svm(C=C)
+    #
+    # plot_scores(Cs)
 
     ''' CRF '''
 
     X_train, Y_train = prepare_structured_dataset('train_struct.txt')
     X_test, Y_test = prepare_structured_dataset('test_struct.txt')
     params = load_model_params()
-
-    x_test = convert_word_to_character_dataset(X_test)
-    y_test = convert_word_to_character_dataset(Y_test)
 
     # Run optimization, should take 3.5+ hours so commented out.
     '''
@@ -160,17 +157,14 @@ if __name__ == '__main__':
     WORD_CV_SCORES.clear()
 
     for C in Cs:
-        print("\nComputing predictions for C = %d" % (C))
+        print("Computing predictions for C = %d" % (C))
         # get pretrained optimal params
         params = get_trained_model_parameters('model_C_' + str(C))
         w = matricize_W(params)
         t = matricize_Tij(params)
 
         # get predictions
-        prediction = decode_crf(x_test, w, t)
-
-        # reshape into a list of words
-        prediction = convert_character_to_word_dataset(prediction, Y_test)  # y_test is for getting word ids
+        prediction = decode_crf(X_test, w, t)
 
         # compute accuracy
         word_acc, char_acc = compute_word_char_accuracy_score(prediction, Y_test)

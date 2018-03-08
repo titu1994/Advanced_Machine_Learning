@@ -99,13 +99,11 @@ if __name__ == '__main__':
 
     print("Computing scores for best model with no distortion")
     # compute the test scores for best model first
-    x_test = convert_word_to_character_dataset(X_test)
     params = get_trained_model_parameters('solution')
     w = matricize_W(params)
     t = matricize_Tij(params)
 
-    y_preds = decode_crf(x_test, w, t)
-    y_preds = convert_character_to_word_dataset(y_preds, Y_test)
+    y_preds = decode_crf(X_test, w, t)
 
     word_acc, char_acc = compute_word_char_accuracy_score(y_preds, Y_test)
     CHAR_CV_SCORES.append(char_acc)
@@ -122,8 +120,7 @@ if __name__ == '__main__':
         w = matricize_W(params)
         t = matricize_Tij(params)
 
-        prediction = decode_crf(x_test, w, t)
-        prediction = convert_character_to_word_dataset(prediction, Y_test)  # y_test is for getting word ids
+        prediction = decode_crf(X_test, w, t)
 
         word_acc, char_acc = compute_word_char_accuracy_score(prediction, Y_test)
 

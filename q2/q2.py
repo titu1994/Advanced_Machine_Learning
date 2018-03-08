@@ -237,9 +237,9 @@ if __name__ == '__main__':
     print("Function value: ", optimization_function(params, X_train, y_train, C=1000))
 
     ''' accuracy '''
-    x_test = convert_word_to_character_dataset(X_test)
-    y_preds = decode_crf(x_test, w, t)
-    y_preds = convert_character_to_word_dataset(y_preds, y_test)
+    #x_test = convert_word_to_character_dataset(X_test)
+    y_preds = decode_crf(X_test, w, t)
+    #y_preds = convert_character_to_word_dataset(y_preds, y_test)
 
     with open("result/prediction.txt", "w") as text_file:
         for i, elt in enumerate(y_preds):

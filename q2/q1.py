@@ -62,9 +62,7 @@ def get_energies(X, w, t):
     return M
 
 
-def decode_crf(X, w, t):
-    print("Predicting %d characters" % len(X))
-
+def decode_crf_word(X, w, t):
     M = get_energies(X, w, t)
 
     cur_word_pos = len(M) - 1
@@ -89,6 +87,14 @@ def decode_crf(X, w, t):
 
     solution = solution[::-1]  # reverse the prediction string
     return np.array(solution)
+
+
+def decode_crf(X, w, t):
+    y_pred = []
+    for i, x in enumerate(X):
+        preds = decode_crf_word(x, w, t)
+        y_pred.append(preds)
+    return y_pred
 
 
 def load_weights_for_Q1():
@@ -145,7 +151,7 @@ if __name__ == '__main__':
     soln = brute_force_algorithm(X[:3], w, t)
 
     # use fast decoder
-    soln = decode_crf(X, w, t)
+    soln = decode_crf_word(X, w, t)
 
     with open("result/decode_output.txt", "w") as text_file:
         for i, elt in enumerate(soln):

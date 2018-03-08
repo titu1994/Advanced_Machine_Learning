@@ -210,7 +210,6 @@ def prepare_dataset_from_dictionary(dataset, word_length_list):
     return X, y
 
 
-
 def compute_word_char_accuracy_score(y_preds, y_true):
     word_count = 0
     correct_word_count = 0
