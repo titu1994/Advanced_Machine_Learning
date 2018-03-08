@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.svm import LinearSVC
 
-from q1 import predict
-from q2 import get_optimal_params, w_matrix, t_matrix
+from q2.q1 import decode_crf
+from q2.q2 import get_optimal_params, w_matrix, t_matrix
 
-from utils import read_data_formatted, flatten_dataset, reshape_dataset, get_params
-from utils import evaluate_structured, compute_accuracy, transform_dataset
+from q2.utils import read_data_formatted, flatten_dataset, reshape_dataset, get_params
+from q2.utils import evaluate_structured, compute_accuracy, transform_dataset
 
 struct_model_path = "data/model_trained.txt"
 struct_test_predictions_path = "data/test_predictions.txt"
@@ -18,10 +18,13 @@ struct_test_predictions_path = "data/test_predictions.txt"
 struct_train_path = "data/train_struct.txt"
 struct_test_path = "data/test_struct.txt"
 
+# used for plotting
 CHAR_CV_SCORES = []
 WORD_CV_SCORES = []
 
+# call the structured svm application
 def train_svm_struct_model(C=1.0):
+    # CLI arguments
     args = ['svm_hmm_windows/svm_hmm_learn',
             '-c', str(C),
             struct_train_path,
@@ -30,6 +33,7 @@ def train_svm_struct_model(C=1.0):
     result = run(args, stdin=PIPE)
 
 
+# use the generated model file to predict labels
 def evaluate_svm_struct_model():
     if not os.path.exists(struct_model_path):
         print("Please train the SVM-HMM model first to generate the model file.")
@@ -43,46 +47,41 @@ def evaluate_svm_struct_model():
         result = run(args, stdin=PIPE)
         print()
 
+        # evaluate svm-hmm results in its specific format
         char_acc, word_acc = evaluate_structured(struct_test_path, struct_test_predictions_path)
 
         CHAR_CV_SCORES.append(char_acc)
         WORD_CV_SCORES.append(word_acc)
 
 
-def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
-    X = []
-    y = []
-
+# train and evaluate a linear SVM
+def train_evaluate_linear_svm(C=1.0):
     X_train, Y_train = read_data_formatted('train_struct.txt')
     X_test, Y_test = read_data_formatted('test_struct.txt')
 
-    word_ids = []
-
-    for i in range(len(X_train)):
-        word_ids.append(len(X_train[i]))
-
+    # linear svm takes data of shape (N, 128) as input
     x_train = flatten_dataset(X_train)
     y_train = flatten_dataset(Y_train)
-
     x_test = flatten_dataset(X_test)
 
-    if transform_trainset:
-        assert limit is not None, "If dataset is being transformed, then limit must be set"
-
-        train_data = transform_dataset(X_train, limit, word_ids)
-
-    model = LinearSVC(C=C, max_iter=1000, verbose=10, random_state=0)
+    # train the model
+    model = LinearSVC(C=C, verbose=10, random_state=0)
     model.fit(x_train, y_train)
 
+    # evaluate the model
     y_preds = model.predict(x_test)
 
+    # reshape the predictions into a list of words
     y_preds = reshape_dataset(y_preds, Y_test)  # Y_test represents the word indices
+
+    # compute accuracy
     word_acc, char_acc = compute_accuracy(y_preds, Y_test)
 
     CHAR_CV_SCORES.append(char_acc)
     WORD_CV_SCORES.append(word_acc)
 
 
+# plot the scores
 def plot_scores(X_range, scale='log', xlabel='C'):
     plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
     plt.title('Character level accuracy')
@@ -162,13 +161,18 @@ if __name__ == '__main__':
 
     for C in Cs:
         print("\nComputing predictions for C = %d" % (C))
+        # get pretrained optimal params
         params = get_optimal_params('solution' + str(C))
         w = w_matrix(params)
         t = t_matrix(params)
-        prediction = predict(x_test, w, t)
 
+        # get predictions
+        prediction = decode_crf(x_test, w, t)
+
+        # reshape into a list of words
         prediction = reshape_dataset(prediction, Y_test)  # y_test is for getting word ids
 
+        # compute accuracy
         word_acc, char_acc = compute_accuracy(prediction, Y_test)
 
         CHAR_CV_SCORES.append(char_acc)

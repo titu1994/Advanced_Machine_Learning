@@ -3,7 +3,7 @@ from scipy.optimize import check_grad, fmin_bfgs
 import time
 
 from utils import read_data_formatted, get_params, flatten_dataset, reshape_dataset, compute_accuracy
-from q1 import predict
+from q1 import decode_crf
 
 def forward_propogate(w_x, t):
     word_len = len(w_x)
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     x_test = flatten_dataset(X_test)
 
     ''' accuracy '''
-    y_preds = predict(x_test, w, t)
+    y_preds = decode_crf(x_test, w, t)
 
     y_preds = reshape_dataset(y_preds, y_test)
 
