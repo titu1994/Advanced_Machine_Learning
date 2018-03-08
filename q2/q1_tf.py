@@ -4,9 +4,9 @@ from tensorflow.contrib.crf.python.ops.crf import crf_decode
 np.random.seed(0)
 tf.set_random_seed(0)
 
-from utils import load_dummy_data
+from utils import load_q1_dataset
 
-X, W, Tij = load_dummy_data()
+X, W, Tij = load_q1_dataset()
 
 num_examples = 1  # 1 sample
 num_words = X.shape[0]  # 100

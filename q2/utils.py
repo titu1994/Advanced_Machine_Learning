@@ -14,79 +14,83 @@ if not os.path.exists('result'):
     os.makedirs('result')
 
 
-def read_data(file_name):
+def _load_structured_svm_data(file_name):
     file = open('data/' + file_name, 'r')
-    y = []
-    qids = []
     X = []
+    y = []
+    word_ids = []
 
     for line in file:
         temp = line.split()
         # get label
         label_string = temp[0]
-        # normalizes y to 0...25 instead of 1...26
+        # y to 0...25 instead of 1...26
         y.append(int(label_string) - 1)
 
-        # get qid
-        qid_string = re.split(':', temp[1])[1]
-        qids.append(int(qid_string))
+        # get word id
+        word_id_string = re.split(':', temp[1])[1]
+        word_ids.append(int(word_id_string))
 
-        # get x values
         x = np.zeros(128)
-
-        # do we need a 1 vector?
-        # x[128] = 1
         for elt in temp[2:]:
             index = re.split(':', elt)
             x[int(index[0]) - 1] = 1
+
         X.append(x)
+
     y = np.array(y)
-    qids = np.array(qids)
-    return y, qids, X
+    word_ids = np.array(word_ids)
+
+    return X, y, word_ids
 
 
-def read_data_formatted(file_name, return_ids=False):
+def prepare_structured_dataset(file_name, return_ids=False):
     # get initial output
-    y, qids, X = read_data(file_name)
+    X, y, word_ids = _load_structured_svm_data(file_name)
     ids = {}
-    y_tot = []
-    X_tot = []
+    X_dataset = []
+    y_dataset = []
     current = 0
 
-    y_tot.append([])
-    X_tot.append([])
+    X_dataset.append([])
+    y_dataset.append([])
 
     for i in range(len(y)):
+        # computes an inverse map of word id to id in the dataset
+        if word_ids[i] not in ids:
+            ids[word_ids[i]] = current
 
-        if qids[i] not in ids:
-            ids[qids[i]] = current
+        X_dataset[current].append(X[i])
+        y_dataset[current].append(y[i])
 
-        y_tot[current].append(y[i])
-        X_tot[current].append(X[i])
+        if (i + 1 < len(y) and word_ids[i] != word_ids[i + 1]):
+            X_dataset[current] = np.array(X_dataset[current])
+            y_dataset[current] = np.array(y_dataset[current])
 
-        if (i + 1 < len(y) and qids[i] != qids[i + 1]):
-            y_tot[current] = np.array(y_tot[current])
-            X_tot[current] = np.array(X_tot[current])
-            y_tot.append([])
-            X_tot.append([])
+            X_dataset.append([])
+            y_dataset.append([])
+
             current = current + 1
 
     if not return_ids:
-        return X_tot, y_tot
+        return X_dataset, y_dataset
     else:
-        return X_tot, y_tot, ids
+        return X_dataset, y_dataset, ids
 
 
 # parameter set for 2a
-def get_params():
+def load_model_params():
     file = open('data/model.txt', 'r')
     params = []
-    for i, elt in enumerate(file):
-        params.append(float(elt))
+
+    for i, param in enumerate(file):
+        params.append(float(param))
+
     return np.array(params)
 
 
-def flatten_dataset(X):
+# convenience function to flatten a word level dataset into a character level one
+def convert_word_to_character_dataset(X):
     x = []
     for w_list in X:
         for w in w_list:
@@ -95,7 +99,9 @@ def flatten_dataset(X):
     x = np.array(x)
     return x
 
-def reshape_dataset(X, ref_y):
+
+# convenience function to convert a character level dataset into a word level one
+def convert_character_to_word_dataset(X, ref_y):
     x = [[]]
     index = 0
     for i, words in enumerate(ref_y):
@@ -109,7 +115,7 @@ def reshape_dataset(X, ref_y):
     return x
 
 
-def load_dummy_data():
+def load_q1_dataset():
     with open(Q1_TRAIN_PATH, 'r') as f:
         lines = f.readlines()
 
@@ -125,6 +131,7 @@ def load_dummy_data():
     return Xi, Wj, Tij
 
 
+# helper methods for tensorflow
 def load_dataset_as_dictionary():
     train_data = OrderedDict()
 
@@ -160,6 +167,7 @@ def load_dataset_as_dictionary():
     return train_data, test_data
 
 
+# helper methods for tensorflow
 def calculate_word_lengths_from_dictionary(dataset):
     word_list = []
     prev_word = -100
@@ -176,6 +184,7 @@ def calculate_word_lengths_from_dictionary(dataset):
     return word_list
 
 
+# helper methods for tensorflow
 def prepare_dataset_from_dictionary(dataset, word_length_list):
     num_samples = len(word_length_list)
 
@@ -204,7 +213,9 @@ def prepare_dataset_from_dictionary(dataset, word_length_list):
     y = y[:-1]
     return X, y
 
-def compute_accuracy(y_preds, y_true):
+
+
+def compute_word_char_accuracy_score(y_preds, y_true):
     word_count = 0
     correct_word_count = 0
     letter_count = 0
@@ -221,7 +232,7 @@ def compute_accuracy(y_preds, y_true):
     return correct_word_count / word_count, correct_letter_count / letter_count
 
 
-def evaluate_structured(f_true, f_pred):
+def evaluate_structured_svm_predictions(f_true, f_pred):
     with open(f_true, 'r') as f_true, open(f_pred, 'r') as f_pred:
         true_char_list = []
         true_word_list = []
@@ -270,7 +281,7 @@ def evaluate_structured(f_true, f_pred):
         return char_acc, word_acc
 
 
-def evaluate_linearSVM(y_true, y_preds, word_ids):
+def evaluate_linear_svm_predictions(y_true, y_preds, word_ids):
     true_word_list = []
     pred_word_list = []
 
@@ -343,7 +354,8 @@ def _translation(Xi, offsets):
 
     return y
 
-def transform_dataset(train_set, limit):
+
+def transform_linear_svm_dataset(train_set, limit):
     if limit == 0:
         return train_set
 
@@ -384,7 +396,6 @@ def transform_dataset(train_set, limit):
             train_set[image_id] = value_set
 
     return train_set
-
 
 
 def transform_crf_dataset(X, id_map, limit):

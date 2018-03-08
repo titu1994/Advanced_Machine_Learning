@@ -6,17 +6,17 @@ from tensorflow.contrib.opt.python.training.external_optimizer import ScipyOptim
 np.random.seed(0)
 tf.set_random_seed(0)
 
-from Project1.data_loader import load_Q2_data, calculate_word_lengths, prepare_dataset
+from utils import load_dataset_as_dictionary, calculate_word_lengths_from_dictionary, prepare_dataset_from_dictionary
 
 RESTORE_CHECKPOINT = True
 C = 1000
 
-train_dataset, test_dataset = load_Q2_data()
-train_word_lengths = calculate_word_lengths(train_dataset)
-test_word_lengths = calculate_word_lengths(test_dataset)
+train_dataset, test_dataset = load_dataset_as_dictionary()
+train_word_lengths = calculate_word_lengths_from_dictionary(train_dataset)
+test_word_lengths = calculate_word_lengths_from_dictionary(test_dataset)
 
-X_train, y_train = prepare_dataset(train_dataset, train_word_lengths)
-X_test, y_test = prepare_dataset(test_dataset, test_word_lengths)
+X_train, y_train = prepare_dataset_from_dictionary(train_dataset, train_word_lengths)
+X_test, y_test = prepare_dataset_from_dictionary(test_dataset, test_word_lengths)
 
 print("Train shape : ", X_train.shape, y_train.shape)
 print("Test shape : ", X_test.shape, y_test.shape)
