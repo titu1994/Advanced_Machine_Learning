@@ -31,6 +31,8 @@ Running the tests
 3. The optimal parameters are pre-computed based on C values and can be found under result/solution[C].txt where C=1, 10, 100, 1000.
 4. The optimal paramters are pre-computed and stored under result/solution[C]distortion.txt where C=500, 1000, 1500, 2000.
 
+Note: Files q1_tf.py, q2_tf.py, q3_tf.py are Tensorflow implementations that we used to cross-check and verify our manual implementations. You can run those files to check the various outcomes.
+
 Acknowledgements
 
 Professor Xinhua Zhang
