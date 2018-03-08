@@ -11,9 +11,18 @@ Prerequisities
 
 Packages required to run the code can be found in requirements.txt:
 
+Run: pip install -r requirements.txt
+
 1. scipy
 2. scikit-learn
 3. numpy
+
+Run each script for respective question.
+Comment out parts which are long running.
+
+Note: TF is for checking with our final solution, to run, use 
+pip install tensorflow or 
+pip install tensorflow-gpu if CUDA is installed
 
 Running the tests
 
