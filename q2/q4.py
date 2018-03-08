@@ -100,8 +100,8 @@ if __name__ == '__main__':
     plot_scores(limits, scale=None, xlabel='distortion count')
 
     ''' CRF '''
-    CHAR_CV_SCORES.clear()
-    WORD_CV_SCORES.clear()
+    CHAR_CV_SCORES = []
+    WORD_CV_SCORES = []
 
     X_test, Y_test = read_data_formatted('test_struct.txt')
 
@@ -112,18 +112,18 @@ if __name__ == '__main__':
     w = w_matrix(params)
     t = t_matrix(params)
 
-    #y_preds = predict(x_test, w, t)
-    #y_preds = reshape_dataset(y_preds, Y_test)
+    y_preds = predict(x_test, w, t)
+    y_preds = reshape_dataset(y_preds, Y_test)
 
-    #word_acc, char_acc = compute_accuracy(y_preds, Y_test)
-    #CHAR_CV_SCORES.append(char_acc)
-    #WORD_CV_SCORES.append(word_acc)
+    word_acc, char_acc = compute_accuracy(y_preds, Y_test)
+    CHAR_CV_SCORES.append(char_acc)
+    WORD_CV_SCORES.append(word_acc)
 
     for limit in limits:
         print("Beginning distortaion of first %d ids" % (limit))
 
         X_train, Y_train = read_data_formatted('train_struct_%d.txt' % (limit))
-        optimize(params, X_train, Y_train, C=1000, name='solution_%d_distortion' % limit)
+        # optimize(params, X_train, Y_train, C=1500, name='solution_%d_distortion' % limit)
 
         params = get_optimal_params('solution_%d_distortion' % limit)
         w = w_matrix(params)
