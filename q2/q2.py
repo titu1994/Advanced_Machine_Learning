@@ -215,7 +215,7 @@ def optimize(params, X, y, C, name):
     print("Optimizing parameters. This will take a long time (at least 1 hours).")
     start = time.time()
     out = fmin_bfgs(optimization_function, params, grad_func, (X, y, C), disp=1)
-    print("Total time: ", end='')
+    print("Total time: ")
     print(time.time() - start)
 
     with open("result/" + name + ".txt", "w") as text_file:
