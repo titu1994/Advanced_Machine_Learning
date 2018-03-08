@@ -54,7 +54,7 @@ def train_evaluate_linear_svm(C=1.0, transform_trainset=False, limit=None):
     y = []
 
     X_train, Y_train = read_data_formatted('train_struct.txt')
-    X_test, Y_test = read_data_formatted('test_struct.txt'3)
+    X_test, Y_test = read_data_formatted('test_struct.txt')
 
     word_ids = []
 

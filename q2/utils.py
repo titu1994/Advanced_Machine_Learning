@@ -169,11 +169,10 @@ def calculate_word_lengths_from_dictionary(dataset):
 
 
 def prepare_dataset_from_dictionary(dataset, word_length_list):
-    max_length = max(word_length_list)
     num_samples = len(word_length_list)
 
-    X = np.zeros((num_samples, max_length, 128), dtype='float32')
-    y = np.zeros((num_samples, max_length), dtype='int32')
+    X = [[]]
+    y = [[]]
 
     dataset_pointer = 0
     dataset_values = list(dataset.values())
@@ -183,13 +182,18 @@ def prepare_dataset_from_dictionary(dataset, word_length_list):
 
         for j in range(num_words):
             letter, next_id, word_id, pos, p_ij = dataset_values[j + dataset_pointer]
-            X[i, j, :] = p_ij
+            X[i].append(np.array(p_ij))
 
             letter_to_int = int(ord(letter[0]) - ord('a'))
-            y[i, j] = letter_to_int
+            y[i].append(letter_to_int)
+
+        X.append([])
+        y.append([])
 
         dataset_pointer += num_words
 
+    X = X[:-1]
+    y = y[:-1]
     return X, y
 
 def compute_accuracy(y_preds, y_true):

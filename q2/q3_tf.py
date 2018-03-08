@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
+
 from tensorflow.contrib.crf.python.ops.crf import crf_decode, crf_log_likelihood
 from tensorflow.contrib.opt.python.training.external_optimizer import ScipyOptimizerInterface
 
@@ -7,6 +9,8 @@ np.random.seed(0)
 tf.set_random_seed(0)
 
 from Project1.data_loader import load_Q2_data, calculate_word_lengths, prepare_dataset
+
+CHAR_CV_SCORES = []
 
 RESTORE_CHECKPOINT = False
 C = 1000
@@ -29,6 +33,17 @@ num_test_words = X_test.shape[1]  # random
 
 num_features = X_train.shape[2]  # 128
 num_tags = 26  # 26
+
+def plot_scores(X_range, scale='log', xlabel='C'):
+    plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
+    plt.title('Character level accuracy')
+    plt.legend()
+    plt.xlabel(xlabel)
+    if scale is not None: plt.xscale(scale)
+    plt.xticks(X_range)
+    plt.ylabel('accuracy')
+    plt.show()
+
 
 with tf.Session() as sess:
     x_t = tf.constant(X_train, dtype=tf.float32, name='X_train')
@@ -59,6 +74,8 @@ with tf.Session() as sess:
         if ckpt_path is not None and tf.train.checkpoint_exists(ckpt_path):
             print("Loading Encoder Checkpoint !")
             saver.restore(sess, ckpt_path)
+
+    CHAR_CV_SCORES.clear()
 
     for C in Cs:
         sess.run(tf.global_variables_initializer())
@@ -111,8 +128,10 @@ with tf.Session() as sess:
         correct_labels = np.sum((y_test == tf_viterbi_sequence) * mask)
         accuracy = 100.0 * correct_labels / float(total_labels)
 
+        CHAR_CV_SCORES.append(accuracy)
+
         print("Test | Accuracy: %.2f%%" % (accuracy))
 
         saver.save(sess, 'models/crf.ckpt', global_step)
 
-
+    plot_scores(Cs)
