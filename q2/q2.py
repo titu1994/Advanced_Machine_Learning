@@ -5,7 +5,8 @@ from scipy.optimize import check_grad, fmin_bfgs
 from utils import prepare_structured_dataset, load_model_params, convert_word_to_character_dataset, convert_character_to_word_dataset, compute_word_char_accuracy_score
 from q1 import decode_crf
 
-def compute_forward_message(w_x, t):
+def compute_forward_message(x, w, t):
+    w_x = np.dot(x,w.T)
     num_words = len(w_x)
     M = np.zeros((num_words, 26))
 
@@ -20,8 +21,9 @@ def compute_forward_message(w_x, t):
     return M
 
 
-def compute_backward_message(w_x, t):
+def compute_backward_message(x, w, t):
     # get the index of the final letter of the word
+    w_x = np.dot(x,w.T)
     fin_index = len(w_x) - 1
     M = np.zeros((len(w_x), 26))
 
@@ -35,7 +37,8 @@ def compute_backward_message(w_x, t):
     return M
 
 
-def compute_numerator(y, w_x, t):
+def compute_numerator(y, x, w, t):
+    w_x = np.dot(x,w.T)
     sum_ = 0
     # for every word
     for i in range(len(w_x)):
@@ -48,9 +51,9 @@ def compute_numerator(y, w_x, t):
     return np.exp(sum_)
 
 
-def compute_denominator(alpha, w_x):
+def compute_denominator(alpha, x, w):
     # forward propagate to the end of the word and return the sum
-    return np.sum(np.exp(alpha[-1] + w_x[-1]))
+    return np.sum(np.exp(alpha[-1] + np.dot(x,w.T)[-1]))
 
 
 # convert W into a matrix from its flattened parameters
@@ -75,8 +78,10 @@ def matricize_Tij(params):
     return t_ij
 
 
-def compute_gradient_wrt_Wy(X, y, w_x, t, alpha, beta, denominator):
+def compute_gradient_wrt_Wy(X, y, w, t, alpha, beta, denominator):
     gradient = np.zeros((26, 128))
+
+    w_x = np.dot(X,w.T)
 
     for i in range(len(X)):
         gradient[y[i]] += X[i]
@@ -91,9 +96,9 @@ def compute_gradient_wrt_Wy(X, y, w_x, t, alpha, beta, denominator):
     return gradient.flatten()
 
 
-def compute_gradient_wrt_Tij(y, w_x, t, alpha, beta, denominator):
+def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
     gradient = np.zeros(26 * 26)
-
+    w_x = np.dot(x,w.T)
     for i in range(len(w_x) - 1):
         for j in range(26):
             gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
@@ -112,17 +117,17 @@ def compute_gradient_wrt_Tij(y, w_x, t, alpha, beta, denominator):
 
 def gradient_word(X, y, w, t, word_index):
     # O(n * |Y|)
-    w_x = np.inner(X[word_index], w)
+    # w_x = np.dot(X[word_index], w.T)
     # O(n * |Y|^2)
-    f_mess = compute_forward_message(w_x, t)
+    f_mess = compute_forward_message(X[word_index], w, t)
     # O(n * |Y|^2)
-    b_mess = compute_backward_message(w_x, t)
+    b_mess = compute_backward_message(X[word_index], w, t)
     # O(1)
-    den = compute_denominator(f_mess, w_x)
+    den = compute_denominator(f_mess, X[word_index], w)
     # O(n * |Y|^2)
-    wy_grad = compute_gradient_wrt_Wy(X[word_index], y[word_index], w_x, t, f_mess, b_mess, den)
+    wy_grad = compute_gradient_wrt_Wy(X[word_index], y[word_index], w, t, f_mess, b_mess, den)
     # O(n * |Y|^2)
-    t_grad = compute_gradient_wrt_Tij(y[word_index], w_x, t, f_mess, b_mess, den)
+    t_grad = compute_gradient_wrt_Tij(y[word_index], X[word_index], w, t, f_mess, b_mess, den)
     return np.concatenate((wy_grad, t_grad))
 
 
@@ -136,9 +141,9 @@ def averaged_gradient(params, X, y, limit):
     return total / (limit)
 
 
-def compute_log_p_y_given_x(w_x, y, t, word_index):
-    f_mess = compute_forward_message(w_x, t)
-    return np.log(compute_numerator(y, w_x, t) / compute_denominator(f_mess, w_x))
+def compute_log_p_y_given_x(x,w, y, t, word_index):
+    f_mess = compute_forward_message(x, w, t)
+    return np.log(compute_numerator(y, x, w, t) / compute_denominator(f_mess, x, w))
 
 
 def compute_log_p_y_given_x_avg(params, X, y, limit):
@@ -147,8 +152,8 @@ def compute_log_p_y_given_x_avg(params, X, y, limit):
 
     total = 0
     for i in range(limit):
-        w_x = np.inner(X[i], w)
-        total += compute_log_p_y_given_x(w_x, y[i], t, i)
+        # w_x = np.dot(X[i], w)
+        total += compute_log_p_y_given_x(X[i],w, y[i], t, i)
 
     return total / (limit)
 
@@ -160,7 +165,7 @@ def check_gradient(params, X, y):
 
 
 def measure_gradient_computation_time(params, X, y):
-    # this takes 7.2 seconds for me
+    # this takes 7.2 seconds for us
     start = time.time()
     av_grad = averaged_gradient(params, X, y, len(X))
     print("Total time:", time.time() - start)
