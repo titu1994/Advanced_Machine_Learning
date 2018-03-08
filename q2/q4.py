@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.svm import LinearSVC
 
 from utils import convert_word_to_character_dataset, convert_character_to_word_dataset, prepare_structured_dataset, compute_word_char_accuracy_score, load_model_params
-from utils import load_dataset_as_dictionary, prepare_dataset_from_dictionary, calculate_word_lengths_from_dictionary
+from utils import load_dataset_as_dictionary, calculate_word_lengths_from_dictionary
 from utils import evaluate_linear_svm_predictions, transform_linear_svm_dataset, transform_crf_dataset
 
 from q1 import decode_crf, load_weights_for_Q1

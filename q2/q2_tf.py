@@ -8,7 +8,7 @@ tf.set_random_seed(0)
 
 from utils import load_dataset_as_dictionary, calculate_word_lengths_from_dictionary, prepare_dataset_from_dictionary
 
-RESTORE_CHECKPOINT = True
+RESTORE_CHECKPOINT = False
 C = 1000
 
 train_dataset, test_dataset = load_dataset_as_dictionary()
@@ -97,7 +97,7 @@ with tf.Session() as sess:
     correct_labels = np.sum((y_train == tf_viterbi_sequence) * mask)
     accuracy = 100.0 * correct_labels / float(total_labels)
 
-    print("Train | Loss : %0.4f | Accuracy: %.2f%%" % (logloss, accuracy))
+    print("Train | Loss : %0.16f | Accuracy: %f%%" % (logloss, accuracy))
 
     mask = (np.expand_dims(np.arange(num_test_words), axis=0) <
             np.expand_dims(test_word_lengths, axis=1))
@@ -108,9 +108,12 @@ with tf.Session() as sess:
     correct_labels = np.sum((y_test == tf_viterbi_sequence) * mask)
     accuracy = 100.0 * correct_labels / float(total_labels)
 
-    print("Test | Accuracy: %.2f%%" % (accuracy))
+    print("Test | Accuracy: %0.12f%%" % (accuracy))
 
     saver.save(sess, 'models/crf.ckpt', global_step)
 
-
-
+    with open('result/tf_q2.txt', 'w') as f:
+        for i, row in enumerate(tf_viterbi_sequence):
+            count = test_word_lengths[i]
+            for x in row[:count]:
+                f.write(str(x + 1) + "\n")

@@ -186,10 +186,11 @@ def calculate_word_lengths_from_dictionary(dataset):
 
 # helper methods for tensorflow
 def prepare_dataset_from_dictionary(dataset, word_length_list):
+    max_length = max(word_length_list)
     num_samples = len(word_length_list)
 
-    X = [[]]
-    y = [[]]
+    X = np.zeros((num_samples, max_length, 128), dtype='float32')
+    y = np.zeros((num_samples, max_length), dtype='int32')
 
     dataset_pointer = 0
     dataset_values = list(dataset.values())
@@ -199,18 +200,13 @@ def prepare_dataset_from_dictionary(dataset, word_length_list):
 
         for j in range(num_words):
             letter, next_id, word_id, pos, p_ij = dataset_values[j + dataset_pointer]
-            X[i].append(np.array(p_ij, dtype='int32'))
+            X[i, j, :] = p_ij
 
             letter_to_int = int(ord(letter[0]) - ord('a'))
-            y[i].append(letter_to_int)
-
-        X.append([])
-        y.append([])
+            y[i, j] = letter_to_int
 
         dataset_pointer += num_words
 
-    X = X[:-1]
-    y = y[:-1]
     return X, y
 
 
@@ -428,3 +424,4 @@ def transform_crf_dataset(X, id_map, limit):
             X[index][i] = image.flatten()
 
     return X
+

@@ -245,16 +245,7 @@ if __name__ == '__main__':
         for i, elt in enumerate(y_preds):
             # convert to characters
             for word in elt:
-                text_file.write(str(word))
+                text_file.write(str(word + 1))
                 text_file.write("\n")
 
     print("Test accuracy : ", compute_word_char_accuracy_score(y_preds, y_test))
-
-
-
-
-
-
-
-
-
