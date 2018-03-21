@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
         ''' training is commented out since it takes a few hours '''
         # X_train, Y_train = read_data_formatted('train_distorted_%d.txt' % (limit))
-        # train_crf(params, X_train, Y_train, C=1000, model_name='model_%d_distortion' % limit)
+        # train_crf_lbfgs(params, X_train, Y_train, C=1000, model_name='model_%d_distortion' % limit)
 
         params = get_trained_model_parameters('model_%d_distortion' % limit)
         w = matricize_W(params)

@@ -230,6 +230,9 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
             W -= learning_rate * W_grad + l2_lambda * W
             T -= learning_rate * T_grad + l2_lambda * T
 
+            #print("W norm", np.linalg.norm(W))
+            #print("T norm", np.linalg.norm(T))
+
         if (epoch + 1) % 10 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
