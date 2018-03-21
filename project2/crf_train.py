@@ -273,7 +273,7 @@ if __name__ == '__main__':
     ''' training  '''
     X_train, y_train = prepare_structured_dataset('train_sgd.txt')
     X_test, y_test = prepare_structured_dataset('test_sgd.txt')
-    params = load_model_params()
+    params = load_model_params_zeros()
 
     test_xy = [X_test, y_test]
 
