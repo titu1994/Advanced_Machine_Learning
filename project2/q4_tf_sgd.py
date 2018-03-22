@@ -81,6 +81,9 @@ with tf.Session() as sess:
 
     saver = tf.train.Saver(max_to_keep=1)
 
+    w_norm = tf.norm(w_t, ord='fro', axis=[0, 1])
+    t_norm = tf.norm(transition_weights_t, ord='fro', axis=[0, 1])
+
     sess.run(tf.global_variables_initializer())
 
     if RESTORE_CHECKPOINT:
@@ -98,12 +101,15 @@ with tf.Session() as sess:
         sess.run(train_op)
 
         if (epoch + 1) % 50 == 0:
-            tf_viterbi_sequence, logloss = sess.run([viterbi_sequence_train, loss])
+            tf_viterbi_sequence, logloss, weight_norm, transition_norm = sess.run([viterbi_sequence_train, loss,
+                                                                                   w_norm, t_norm])
 
             correct_labels = np.sum((y_train == tf_viterbi_sequence) * mask)
             accuracy = 100.0 * correct_labels / float(total_labels)
 
             print("Epoch %d: Train | Loss : %0.16f | Accuracy: %f%%" % (epoch + 1, logloss, accuracy))
+            print("W norm : ", weight_norm, "T norm : ", transition_norm)
+
 
     tf_viterbi_sequence, logloss = sess.run([viterbi_sequence_train, loss])
 
