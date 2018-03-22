@@ -51,9 +51,18 @@ def compute_numerator(y, x, w, t):
     return np.exp(sum_)
 
 
+# def compute_denominator(alpha, x, w):
+#     # forward propagate to the end of the word and return the sum
+#     return np.log(np.sum(np.exp(alpha[-1] + np.dot(x,w.T)[-1])))
+
+
 def compute_denominator(alpha, x, w):
     # forward propagate to the end of the word and return the sum
-    return np.sum(np.exp(alpha[-1] + np.dot(x,w.T)[-1]))
+    intermediate = alpha[-1] + np.dot(x,w.T)[-1]
+    max_inter = np.max(intermediate)
+    intermediate -= max_inter
+    out = max_inter + np.log(np.sum(np.exp(intermediate)))
+    return out
 
 
 # convert W into a matrix from its flattened parameters
@@ -84,7 +93,7 @@ def compute_gradient_wrt_Wy(X, y, w, t, alpha, beta, denominator):
         # for each position, reduce the probability of the character
         temp = np.ones((26, 129)) * X[i]
         temp = temp.transpose()
-        temp = temp * np.exp(alpha[i] + beta[i] + w_x[i]) / denominator
+        temp = temp * np.exp((alpha[i] + beta[i] + w_x[i]) - denominator)
 
         gradient -= temp.transpose()
 
@@ -99,7 +108,7 @@ def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
             gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
 
     # normalize the gradient
-    gradient /= denominator
+    gradient /= np.exp(denominator)
 
     # add the gradient for the next word
     for i in range(len(w_x) - 1):
@@ -144,7 +153,7 @@ def averaged_gradient(params, X, y, limit):
 
 def compute_log_p_y_given_x(x,w, y, t, word_index):
     f_mess = compute_forward_message(x, w, t)
-    return np.log(compute_numerator(y, x, w, t) / compute_denominator(f_mess, x, w))
+    return np.log(compute_numerator(y, x, w, t) / np.exp(compute_denominator(f_mess, x, w)))
 
 
 def compute_log_p_y_given_x_avg(params, X, y, limit):
@@ -161,7 +170,7 @@ def compute_log_p_y_given_x_avg(params, X, y, limit):
 
 def check_gradient(params, X, y):
     # check the gradient of the first 10 words
-    grad_value = check_grad(compute_log_p_y_given_x_avg, averaged_gradient, params, X, y, 10)
+    grad_value = check_grad(compute_log_p_y_given_x_avg, averaged_gradient, params, X, y, 1)
     print("Gradient check (first 10 character) : ", grad_value)
 
 
@@ -267,11 +276,13 @@ def get_trained_model_parameters(model_name):
 if __name__ == '__main__':
 
     ''' check gradients and write to file '''
-    # print("Checking gradient correctness")
-    # X, y = prepare_structured_dataset('train_sgd.txt')
-    # params = load_model_params()
-    # check_gradient(params, X, y)
+    print("Checking gradient correctness")
+    X, y = prepare_structured_dataset('train_sgd.txt')
+    params = load_model_params()
+    check_gradient(params, X, y)
     # measure_gradient_computation_time(params, X, y)
+
+    #exit()
 
     ''' training  '''
     X_train, y_train = prepare_structured_dataset('train_sgd.txt')
