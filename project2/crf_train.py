@@ -227,8 +227,8 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
 
             # perform SGD update
-            W -= learning_rate * W_grad #+ l2_lambda * W
-            T -= learning_rate * T_grad #+ l2_lambda * T
+            W -= learning_rate * W_grad + l2_lambda * W
+            T -= learning_rate * T_grad + l2_lambda * T
 
             print("W norm", np.linalg.norm(W))
             print("T norm", np.linalg.norm(T))
