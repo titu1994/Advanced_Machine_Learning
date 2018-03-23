@@ -100,15 +100,44 @@ def compute_gradient_wrt_Wy(X, y, w, t, alpha, beta, denominator):
     return gradient.flatten()
 
 
+# def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
+#     gradient = np.zeros(26 * 26)
+#     w_x = np.dot(x,w.T)
+#
+#     for i in range(len(w_x) - 1):
+#         for j in range(26):
+#             #inter = np.exp(np.logaddexp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i], 0))
+#             #gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
+#             gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
+#
+#     # normalize the gradient
+#     gradient /= np.exp(denominator)
+#
+#     # add the gradient for the next word
+#     for i in range(len(w_x) - 1):
+#         t_index = y[i]
+#         t_index += 26 * y[i + 1]
+#         gradient[t_index] += 1
+#
+#     return gradient
+
 def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
-    gradient = np.zeros(26 * 26)
-    w_x = np.dot(x,w.T)
+    gradient = np.zeros((26, 26))
+    w_x = np.dot(x, w.T)
+
     for i in range(len(w_x) - 1):
+        wx = w_x[i]
+        alpha_i = alpha[i]
+
         for j in range(26):
-            gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
+            #inter = np.exp(np.logaddexp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i], 0))
+            #gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
+            gradient[j, :] -= np.exp(wx + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha_i - denominator)
+
+    gradient = gradient.flatten()
 
     # normalize the gradient
-    gradient /= np.exp(denominator)
+    #gradient /= np.exp(denominator)
 
     # add the gradient for the next word
     for i in range(len(w_x) - 1):
@@ -120,8 +149,6 @@ def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
 
 
 def gradient_per_word(X, y, w, t, word_index, concat_grads=True):
-    # O(n * |Y|)
-    # w_x = np.dot(X[word_index], w.T)
     # O(n * |Y|^2)
     f_mess = compute_forward_message(X[word_index], w, t)
     # O(n * |Y|^2)
@@ -151,7 +178,7 @@ def averaged_gradient(params, X, y, limit):
     return total / (limit)
 
 
-def compute_log_p_y_given_x(x,w, y, t, word_index):
+def compute_log_p_y_given_x(x, w, y, t, word_index):
     f_mess = compute_forward_message(x, w, t)
     return np.log(compute_numerator(y, x, w, t) / np.exp(compute_denominator(f_mess, x, w)))
 
@@ -171,7 +198,7 @@ def compute_log_p_y_given_x_avg(params, X, y, limit):
 def check_gradient(params, X, y):
     # check the gradient of the first 10 words
     grad_value = check_grad(compute_log_p_y_given_x_avg, averaged_gradient, params, X, y, 1)
-    print("Gradient check (first 10 character) : ", grad_value)
+    print("Gradient check (first word) : ", grad_value)
 
 
 def measure_gradient_computation_time(params, X, y):
@@ -236,13 +263,19 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
 
             # perform SGD update
-            W -= learning_rate * W_grad + l2_lambda * W
-            T -= learning_rate * T_grad + l2_lambda * T
+            W = W - learning_rate * C * W_grad + l2_lambda * W
+            T = T - learning_rate * C * T_grad + l2_lambda * T
 
             print("W norm", np.linalg.norm(W))
             print("T norm", np.linalg.norm(T))
+            #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
+            #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
+            #print()
 
-        if (epoch + 1) % 10 == 0:
+        logloss = compute_log_p_y_given_x_avg(params, X, y, num_words)
+        print("Logloss : ", -logloss)
+
+        if (epoch + 1) % 1 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
             # print evaluation metrics every 1000 steps of SGD
@@ -282,7 +315,7 @@ if __name__ == '__main__':
     check_gradient(params, X, y)
     # measure_gradient_computation_time(params, X, y)
 
-    #exit()
+    # exit()
 
     ''' training  '''
     X_train, y_train = prepare_structured_dataset('train_sgd.txt')
@@ -296,7 +329,7 @@ if __name__ == '__main__':
     '''
     # Gradient based training (SGD) parameters
     NUM_EPOCHS = 1000
-    LEARNING_RATE = 1e-2
+    LEARNING_RATE = 0.01
     L2_LAMBDA = 1e-2
 
     train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
