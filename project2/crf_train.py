@@ -130,8 +130,7 @@ def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
         alpha_i = alpha[i]
 
         for j in range(26):
-            #inter = np.exp(np.logaddexp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i], 0))
-            #gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
+            # calculate and normalize gradient in one step
             gradient[j, :] -= np.exp(wx + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha_i - denominator)
 
     gradient = gradient.flatten()
@@ -261,16 +260,123 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
 
         for i, word_index in enumerate(indices):
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
+            log_py_given_x = -compute_log_p_y_given_x(X[word_index], W, y[word_index], T, word_index)
 
             # perform SGD update
             W = W - learning_rate * C * W_grad + l2_lambda * W
             T = T - learning_rate * C * T_grad + l2_lambda * T
 
+            learning_rate *= 0.99
+            learning_rate = max(learning_rate, 1e-5)
+
             print("W norm", np.linalg.norm(W))
             print("T norm", np.linalg.norm(T))
+            #print("lr", learning_rate)
             #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
             #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
             #print()
+
+        logloss = compute_log_p_y_given_x_avg(params, X, y, num_words)
+        print("Logloss : ", -logloss)
+
+        if (epoch + 1) % 1 == 0:
+            print('*' * 80)
+            print("Computing metrics after end of epoch %d" % (epoch + 1))
+            # print evaluation metrics every 1000 steps of SGD
+            train_loss = optimization_function(params, X, y, C)
+
+            y_preds = decode_crf(test_X, W, T)
+            word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
+
+            print("Epoch %d | Train loss = %0.8f | Word Accuracy = %0.5f | Char Accuracy = %0.5f" %
+                  (epoch + 1, train_loss, word_acc, char_acc))
+            print('*' * 80, '\n')
+
+    # merge the two grads into a single long vector
+    out = np.concatenate((W.flatten(), T.flatten()))
+    print("Total time: ", end='')
+    print(time.time() - start)
+
+    with open("result/" + model_name + ".txt", "w") as text_file:
+        for i, elt in enumerate(out):
+            text_file.write(str(elt) + "\n")
+
+
+def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy, model_name,
+                   beta1=0.9, beta2=0.999, epsilon=1e-8, amsgrad=False):
+    num_words = len(X)
+    test_X, test_Y = test_xy
+
+    W = matricize_W(params)
+    T = matricize_Tij(params)
+
+    print("Starting SGD optimizaion")
+
+    # make results reproducible
+    np.random.seed(1)
+
+    # ADAM parameters
+    M = {'W': np.zeros_like(W, dtype=np.float32), 'T': np.zeros_like(T, dtype=np.float32)}
+    R = {'W': np.zeros_like(W, dtype=np.float32), 'T': np.zeros_like(T, dtype=np.float32)}
+
+    if amsgrad:
+        R_hat = {'W': np.zeros_like(W, dtype=np.float32), 'T': np.zeros_like(T, dtype=np.float32)}
+
+    start = time.time()
+    iter = 1
+    for epoch in range(num_epochs):
+        print("Begin epoch %d" % (epoch + 1))
+
+        indices = np.arange(0, num_words, step=1, dtype=int)
+        np.random.shuffle(indices)
+
+        for i, word_index in enumerate(indices):
+            W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
+            log_py_given_x = -compute_log_p_y_given_x(X[word_index], W, y[word_index], T, word_index)
+
+            # ADAM updates to Momentum params
+            M['W'] = beta1 * M['W'] + (1 - beta1) * W_grad
+            M['T'] = beta1 * M['T'] + (1 - beta1) * T_grad
+
+            # ADAM updates to RMSProp params
+            R['W'] = beta2 * R['W'] + (1 - beta2) * W_grad ** 2
+            R['T'] = beta2 * R['T'] + (1 - beta2) * T_grad ** 2
+
+            if not amsgrad:
+                # ADAM Update
+                # bias correction
+                m_k_w = M['W'] / (1 - beta1 ** iter)
+                m_k_t = M['T'] / (1 - beta1 ** iter)
+                r_k_w = R['W'] / (1 - beta2 ** iter)
+                r_k_t = R['T'] / (1 - beta2 ** iter)
+
+                # perform ADAM update
+                W -= learning_rate * C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
+                T -= learning_rate * C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
+
+            else:
+                # AMSGrad Update
+                R_hat['W'] = np.maximum(R_hat['W'], R['W'])
+                R_hat['T'] = np.maximum(R_hat['T'], R['T'])
+
+                # perform AMSGrad update
+                W -= learning_rate * C * M['W'] / (np.sqrt(R_hat['W']) + epsilon) + l2_lambda * W
+                T -= learning_rate * C * M['T'] / (np.sqrt(R_hat['T']) + epsilon) + l2_lambda * T
+
+                R['W'] = R_hat['W']
+                R['T'] = R_hat['T']
+
+            #learning_rate *= 0.99
+            #learning_rate = max(learning_rate, 1e-5)
+
+            print("W norm", np.linalg.norm(W))
+            print("T norm", np.linalg.norm(T))
+            #print("lr", learning_rate)
+            #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
+            #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
+            #print()
+
+            iter += 1
 
         logloss = compute_log_p_y_given_x_avg(params, X, y, num_words)
         print("Logloss : ", -logloss)
@@ -328,13 +434,13 @@ if __name__ == '__main__':
     Run optimization. For C= 1000 it takes about an 56 minutes
     '''
     # Gradient based training (SGD) parameters
-    NUM_EPOCHS = 1000
-    LEARNING_RATE = 0.01
-    L2_LAMBDA = 1e-2
+    # NUM_EPOCHS = 1000
+    # LEARNING_RATE = 0.1
+    # L2_LAMBDA = 1e-2
 
-    train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
-                  num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
-                  test_xy=test_xy, model_name='sgd-2')
+    # train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+    #               num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+    #               test_xy=test_xy, model_name='sgd-2')
 
     # NUM_EPOCHS = 1000
     # LEARNING_RATE = 0.005
@@ -351,6 +457,43 @@ if __name__ == '__main__':
     # train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
     #               num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
     #               test_xy=test_xy, model_name='sgd-6')
+
+    # Gradient based training (ADAM + Optional AMSGrad) parameters
+    NUM_EPOCHS = 1000
+    LEARNING_RATE = 0.001
+    L2_LAMBDA = 1e-2
+
+    AMSGRAD = True
+    BETA2 = 0.999
+
+    train_crf_adam(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+                   num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+                   test_xy=test_xy, model_name='adam-2',
+                   beta2=BETA2, amsgrad=AMSGRAD)
+
+    # NUM_EPOCHS = 1000
+    # LEARNING_RATE = 0.001
+    # L2_LAMBDA = 1e-4
+    #
+    # AMSGRAD = True
+    # BETA2 = 0.999
+    #
+    # train_crf_adam(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+    #               num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+    #               test_xy=test_xy, model_name='adam-4',
+    #                beta2=BETA2, amsgrad=AMSGRAD)
+    #
+    # NUM_EPOCHS = 1000
+    # LEARNING_RATE = 0.001
+    # L2_LAMBDA = 1e-6
+    #
+    # AMSGRAD = True
+    # BETA2 = 0.999
+    #
+    # train_crf_adam(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+    #               num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+    #               test_xy=test_xy, model_name='adam-6',
+    #                beta2=BETA2, amsgrad=AMSGRAD)
 
     params = get_trained_model_parameters('sgd-2')
     w = matricize_W(params)
