@@ -260,8 +260,6 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
 
         for i, word_index in enumerate(indices):
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
-            log_py_given_x = -compute_log_p_y_given_x(X[word_index], W, y[word_index], T, word_index)
-
             # perform SGD update
             W = W - learning_rate * C * W_grad + l2_lambda * W
             T = T - learning_rate * C * T_grad + l2_lambda * T
@@ -276,8 +274,9 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
             #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
             #print()
 
-        logloss = compute_log_p_y_given_x_avg(params, X, y, num_words)
-        print("Logloss : ", -logloss)
+        params = np.concatenate((W.flatten(), T.flatten()))
+        logloss = optimization_function(params, X, y, C)
+        print("Logloss : ", logloss)
 
         if (epoch + 1) % 1 == 0:
             print('*' * 80)
@@ -332,7 +331,6 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
 
         for i, word_index in enumerate(indices):
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
-            log_py_given_x = -compute_log_p_y_given_x(X[word_index], W, y[word_index], T, word_index)
 
             # ADAM updates to Momentum params
             M['W'] = beta1 * M['W'] + (1 - beta1) * W_grad
@@ -359,29 +357,39 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 R_hat['W'] = np.maximum(R_hat['W'], R['W'])
                 R_hat['T'] = np.maximum(R_hat['T'], R['T'])
 
+                # bias correction
+                m_k_w = M['W'] / (1 - beta1 ** iter)
+                m_k_t = M['T'] / (1 - beta1 ** iter)
+                r_k_w = R_hat['W'] / (1 - beta2 ** iter)
+                r_k_t = R_hat['T'] / (1 - beta2 ** iter)
+
                 # perform AMSGrad update
-                W -= learning_rate * C * M['W'] / (np.sqrt(R_hat['W']) + epsilon) + l2_lambda * W
-                T -= learning_rate * C * M['T'] / (np.sqrt(R_hat['T']) + epsilon) + l2_lambda * T
+                W -= learning_rate * C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
+                T -= learning_rate * C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
 
                 R['W'] = R_hat['W']
                 R['T'] = R_hat['T']
 
             #learning_rate *= 0.99
             #learning_rate = max(learning_rate, 1e-5)
-
-            print("W norm", np.linalg.norm(W))
-            print("T norm", np.linalg.norm(T))
+            #
+            # print("W norm", np.linalg.norm(W))
+            # print("T norm", np.linalg.norm(T))
             #print("lr", learning_rate)
             #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
             #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
             #print()
 
             iter += 1
+            iter = min(iter, int(1e6))
 
-        logloss = compute_log_p_y_given_x_avg(params, X, y, num_words)
-        print("Logloss : ", -logloss)
+        params = np.concatenate((W.flatten(), T.flatten()))
+        print("W norm", np.linalg.norm(W))
+        print("T norm", np.linalg.norm(T))
+        logloss = optimization_function(params, X, y, C)
+        print("Logloss : ", logloss)
 
-        if (epoch + 1) % 1 == 0:
+        if (epoch + 1) % 5 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
             # print evaluation metrics every 1000 steps of SGD
