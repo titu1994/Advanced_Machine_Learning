@@ -77,6 +77,9 @@ with tf.Session() as sess:
 
     saver = tf.train.Saver(max_to_keep=1)
 
+    w_norm = tf.norm(w_t, ord='fro', axis=[0, 1])
+    t_norm = tf.norm(transition_weights_t, ord='fro', axis=[0, 1])
+
     sess.run(tf.global_variables_initializer())
 
     if RESTORE_CHECKPOINT:
@@ -93,13 +96,14 @@ with tf.Session() as sess:
             np.expand_dims(train_word_lengths, axis=1))
     total_labels = np.sum(train_word_lengths)
 
-    tf_viterbi_sequence, logloss = sess.run([viterbi_sequence_train, loss])
+    tf_viterbi_sequence, logloss, weight_norm, transition_norm = sess.run([viterbi_sequence_train, loss,
+                                                                           w_norm, t_norm])
 
     correct_labels = np.sum((y_train == tf_viterbi_sequence) * mask)
     accuracy = 100.0 * correct_labels / float(total_labels)
 
-    print("Train | Loss : %0.16f | Accuracy: %f%%" % (logloss, accuracy))
 
+    print("Train | Loss : %0.16f | Accuracy: %f%%" % (logloss, accuracy))
     mask = (np.expand_dims(np.arange(num_test_words), axis=0) <
             np.expand_dims(test_word_lengths, axis=1))
     total_labels = np.sum(test_word_lengths)
@@ -110,6 +114,7 @@ with tf.Session() as sess:
     accuracy = 100.0 * correct_labels / float(total_labels)
 
     print("Test | Accuracy: %0.12f%%" % (accuracy))
+    print("W norm : ", weight_norm, "T norm : ", transition_norm)
 
     saver.save(sess, 'models/crf.ckpt', global_step)
 

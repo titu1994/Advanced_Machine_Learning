@@ -38,7 +38,7 @@ def compute_backward_message(x, w, t):
 
 
 def compute_numerator(y, x, w, t):
-    w_x = np.dot(x,w.T)
+    w_x = np.dot(x, w.T)
     sum_ = 0
     # for every word
     for i in range(len(w_x)):
@@ -66,7 +66,6 @@ def compute_denominator(alpha, x, w):
 
 
 # convert W into a matrix from its flattened parameters
-
 def matricize_W(params):
     w = params[:26 * 129]
     w = w.reshape((26, 129))
@@ -179,7 +178,7 @@ def averaged_gradient(params, X, y, limit):
 
 def compute_log_p_y_given_x(x, w, y, t, word_index):
     f_mess = compute_forward_message(x, w, t)
-    return np.log(compute_numerator(y, x, w, t) / np.exp(compute_denominator(f_mess, x, w)))
+    return np.log((compute_numerator(y, x, w, t)) / np.exp(compute_denominator(f_mess, x, w)))
 
 
 def compute_log_p_y_given_x_avg(params, X, y, limit):
@@ -212,25 +211,29 @@ def measure_gradient_computation_time(params, X, y):
             text_file.write("\n")
 
 
-def optimization_function(params, X, y, C):
-    num_examples = len(X)
+def optimization_function(params, X, y, C, limit):
     l2_regularization = 1 / 2 * np.sum(params ** 2)
-    log_loss = compute_log_p_y_given_x_avg(params, X, y, num_examples)
+    log_loss = compute_log_p_y_given_x_avg(params, X, y, limit)
     return -C * log_loss + l2_regularization
 
 
-def d_optimization_function(params, X, y, C):
-    num_examples = len(X)
-    logloss_gradient = averaged_gradient(params, X, y, num_examples)
+def d_optimization_function(params, X, y, C, limit):
+    logloss_gradient = averaged_gradient(params, X, y, limit)
     l2_loss_gradient = params
     return -C * logloss_gradient + l2_loss_gradient
+
+
+def check_gradient_optimization(params, X, y):
+    # check the gradient of the first 10 words
+    grad_value = check_grad(optimization_function, d_optimization_function, params, X, y, 1, 1)
+    print("Gradient optimization check (first word) : ", grad_value)
 
 
 def train_crf_lbfgs(params, X, y, C, model_name):
     print("Optimizing parameters. This will take a long time (at least 1 hour per model).")
 
     start = time.time()
-    out = fmin_bfgs(optimization_function, params, d_optimization_function, (X, y, C), disp=1)
+    out = fmin_bfgs(optimization_function, params, d_optimization_function, (X, y, C, len(X)), disp=1)
     print("Total time: ", end='')
     print(time.time() - start)
 
@@ -275,14 +278,14 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
             #print()
 
         params = np.concatenate((W.flatten(), T.flatten()))
-        logloss = optimization_function(params, X, y, C)
+        logloss = optimization_function(params, X, y, C, num_words)
         print("Logloss : ", logloss)
 
         if (epoch + 1) % 1 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
             # print evaluation metrics every 1000 steps of SGD
-            train_loss = optimization_function(params, X, y, C)
+            train_loss = optimization_function(params, X, y, C, num_words)
 
             y_preds = decode_crf(test_X, W, T)
             word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
@@ -364,8 +367,8 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 r_k_t = R_hat['T'] / (1 - beta2 ** iter)
 
                 # perform AMSGrad update
-                W -= learning_rate * C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
-                T -= learning_rate * C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
+                W += learning_rate * -C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
+                T += learning_rate * -C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
 
                 R['W'] = R_hat['W']
                 R['T'] = R_hat['T']
@@ -373,11 +376,11 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
             #learning_rate *= 0.99
             #learning_rate = max(learning_rate, 1e-5)
             #
-            # print("W norm", np.linalg.norm(W))
-            # print("T norm", np.linalg.norm(T))
+            print("W norm", np.linalg.norm(W))
+            print("T norm", np.linalg.norm(T))
             #print("lr", learning_rate)
-            #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
-            #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
+            print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
+            print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
             #print()
 
             iter += 1
@@ -386,14 +389,14 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
         params = np.concatenate((W.flatten(), T.flatten()))
         print("W norm", np.linalg.norm(W))
         print("T norm", np.linalg.norm(T))
-        logloss = optimization_function(params, X, y, C)
+        logloss = optimization_function(params, X, y, C, num_words)
         print("Logloss : ", logloss)
 
         if (epoch + 1) % 5 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
             # print evaluation metrics every 1000 steps of SGD
-            train_loss = optimization_function(params, X, y, C)
+            train_loss = optimization_function(params, X, y, C, num_words)
 
             y_preds = decode_crf(test_X, W, T)
             word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
@@ -427,6 +430,7 @@ if __name__ == '__main__':
     X, y = prepare_structured_dataset('train_sgd.txt')
     params = load_model_params()
     check_gradient(params, X, y)
+    check_gradient_optimization(params, X, y)
     # measure_gradient_computation_time(params, X, y)
 
     # exit()
@@ -469,7 +473,7 @@ if __name__ == '__main__':
     # Gradient based training (ADAM + Optional AMSGrad) parameters
     NUM_EPOCHS = 1000
     LEARNING_RATE = 0.001
-    L2_LAMBDA = 1e-2
+    L2_LAMBDA = 1e-6 # 1e-2
 
     AMSGRAD = True
     BETA2 = 0.999
@@ -507,7 +511,7 @@ if __name__ == '__main__':
     w = matricize_W(params)
     t = matricize_Tij(params)
 
-    print("Function value: ", optimization_function(params, X_train, y_train, C=1))
+    print("Function value: ", optimization_function(params, X_train, y_train, C=1, limit=len(X_train)))
 
     ''' accuracy '''
     y_preds = decode_crf(X_test, w, t)
