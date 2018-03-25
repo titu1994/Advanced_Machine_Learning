@@ -367,8 +367,8 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 r_k_t = R_hat['T'] / (1 - beta2 ** iter)
 
                 # perform AMSGrad update
-                W += learning_rate * -C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
-                T += learning_rate * -C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
+                W -= learning_rate * C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
+                T -= learning_rate * C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
 
                 R['W'] = R_hat['W']
                 R['T'] = R_hat['T']
@@ -473,7 +473,7 @@ if __name__ == '__main__':
     # Gradient based training (ADAM + Optional AMSGrad) parameters
     NUM_EPOCHS = 1000
     LEARNING_RATE = 0.001
-    L2_LAMBDA = 1e-6 # 1e-2
+    L2_LAMBDA = 1e-2 # 1e-2
 
     AMSGRAD = True
     BETA2 = 0.999
