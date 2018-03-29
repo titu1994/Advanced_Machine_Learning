@@ -264,8 +264,8 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
         for i, word_index in enumerate(indices):
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
             # perform SGD update
-            W = W - learning_rate * C * W_grad + l2_lambda * W
-            T = T - learning_rate * C * T_grad + l2_lambda * T
+            W -= learning_rate * (C * W_grad + l2_lambda * W)
+            T -= learning_rate * (C * T_grad + l2_lambda * T)
 
             learning_rate *= 0.99
             learning_rate = max(learning_rate, 1e-5)
@@ -351,9 +351,12 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 r_k_w = R['W'] / (1 - beta2 ** iter)
                 r_k_t = R['T'] / (1 - beta2 ** iter)
 
+                lr_m = learning_rate / (np.sqrt(r_k_w) + epsilon)
+                lr_t = learning_rate / (np.sqrt(r_k_t) + epsilon)
+
                 # perform ADAM update
-                W -= learning_rate * C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
-                T -= learning_rate * C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
+                W -= lr_m * (C * m_k_w + epsilon) + l2_lambda * W
+                T -= lr_t * (C * m_k_t + epsilon) + l2_lambda * T
 
             else:
                 # AMSGrad Update
@@ -366,9 +369,12 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 r_k_w = R_hat['W'] / (1 - beta2 ** iter)
                 r_k_t = R_hat['T'] / (1 - beta2 ** iter)
 
+                lr_m = learning_rate / (np.sqrt(r_k_w) + epsilon)
+                lr_t = learning_rate / (np.sqrt(r_k_t) + epsilon)
+
                 # perform AMSGrad update
-                W -= learning_rate * C * m_k_w / (np.sqrt(r_k_w) + epsilon) + l2_lambda * W
-                T -= learning_rate * C * m_k_t / (np.sqrt(r_k_t) + epsilon) + l2_lambda * T
+                W -= lr_m * (C * m_k_w + l2_lambda * W)
+                T -= lr_t * (C * m_k_t + l2_lambda * T)
 
                 R['W'] = R_hat['W']
                 R['T'] = R_hat['T']
@@ -376,11 +382,11 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
             #learning_rate *= 0.99
             #learning_rate = max(learning_rate, 1e-5)
             #
-            print("W norm", np.linalg.norm(W))
-            print("T norm", np.linalg.norm(T))
+            #print("W norm", np.linalg.norm(W))
+            #print("T norm", np.linalg.norm(T))
             #print("lr", learning_rate)
-            print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
-            print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
+            #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
+            #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
             #print()
 
             iter += 1
