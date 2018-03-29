@@ -355,8 +355,8 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 lr_t = learning_rate / (np.sqrt(r_k_t) + epsilon)
 
                 # perform ADAM update
-                W -= lr_m * (C * m_k_w + epsilon) + l2_lambda * W
-                T -= lr_t * (C * m_k_t + epsilon) + l2_lambda * T
+                W -= lr_m * (C * m_k_w + epsilon + l2_lambda * W)
+                T -= lr_t * (C * m_k_t + epsilon + l2_lambda * T)
 
             else:
                 # AMSGrad Update
