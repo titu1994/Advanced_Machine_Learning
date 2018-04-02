@@ -79,12 +79,25 @@ with tf.Session() as sess:
     # Train for a fixed number of iterations.
     train_op = optimizer.minimize(loss, global_step)
 
+    grad = optimizer.compute_gradients(loss, [w_t, transition_weights_t])
+
     saver = tf.train.Saver(max_to_keep=1)
+
+    sess.run(tf.global_variables_initializer())
+
+    grads = sess.run(grad)
+
+    w_grad_norm = np.linalg.norm(grads[0][0])
+    t_grad_norm = np.linalg.norm(grads[1][0])
+
+    wt_grad_norm = np.linalg.norm(np.concatenate((grads[0][0], grads[1][0])))
+    print("w grad", w_grad_norm)
+    print("t grad", t_grad_norm)
+    print("wt grad norm", wt_grad_norm)
 
     w_norm = tf.norm(w_t, ord='fro', axis=[0, 1])
     t_norm = tf.norm(transition_weights_t, ord='fro', axis=[0, 1])
 
-    sess.run(tf.global_variables_initializer())
 
     if RESTORE_CHECKPOINT:
         ckpt_path = tf.train.latest_checkpoint('models/')

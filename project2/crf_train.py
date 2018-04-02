@@ -176,6 +176,16 @@ def averaged_gradient(params, X, y, limit):
     return total / (limit)
 
 
+def summed_gradient(params, X, y, limit):
+    w = matricize_W(params)
+    t = matricize_Tij(params)
+
+    total = np.zeros(129 * 26 + 26 ** 2)
+    for i in range(limit):
+        total += gradient_per_word(X, y, w, t, i)
+    return total
+
+
 def compute_log_p_y_given_x(x, w, y, t, word_index):
     f_mess = compute_forward_message(x, w, t)
     return np.log((compute_numerator(y, x, w, t)) / np.exp(compute_denominator(f_mess, x, w)))
@@ -263,15 +273,16 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
 
         for i, word_index in enumerate(indices):
             W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
+
             # perform SGD update
-            W -= learning_rate * (C * W_grad + l2_lambda * W)
-            T -= learning_rate * (C * T_grad + l2_lambda * T)
+            W -= learning_rate * (-C * W_grad + l2_lambda * W)
+            T -= learning_rate * (-C * T_grad + l2_lambda * T)
 
             learning_rate *= 0.99
-            learning_rate = max(learning_rate, 1e-5)
+            learning_rate = max(learning_rate, 1e-4)
 
-            print("W norm", np.linalg.norm(W))
-            print("T norm", np.linalg.norm(T))
+            #print("W norm", np.linalg.norm(W))
+            #print("T norm", np.linalg.norm(T))
             #print("lr", learning_rate)
             #print("W grad stats", np.linalg.norm(W_grad), np.min(W_grad), np.max(W_grad), np.mean(W_grad), np.std(W_grad))
             #print("T grad stats", np.linalg.norm(T_grad), np.min(T_grad), np.max(T_grad), np.mean(T_grad), np.std(T_grad))
@@ -281,7 +292,7 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
         logloss = optimization_function(params, X, y, C, num_words)
         print("Logloss : ", logloss)
 
-        if (epoch + 1) % 1 == 0:
+        if (epoch + 1) % 5 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
             # print evaluation metrics every 1000 steps of SGD
@@ -439,6 +450,13 @@ if __name__ == '__main__':
     check_gradient_optimization(params, X, y)
     # measure_gradient_computation_time(params, X, y)
 
+    # sum_of_gradients = summed_gradient(params, X, y, len(X))
+    # sum_grad_norm = np.linalg.norm(sum_of_gradients)
+    # print('Stats (Sum of gradients) :', np.max(sum_of_gradients), np.min(sum_of_gradients), np.mean(sum_of_gradients), np.std(sum_of_gradients))
+    # print("Norm Sum of grads", sum_grad_norm)
+
+    # train_crf_lbfgs(params, X, y, C=1, model_name='lbfgs')
+
     # exit()
 
     ''' training  '''
@@ -452,13 +470,13 @@ if __name__ == '__main__':
     Run optimization. For C= 1000 it takes about an 56 minutes
     '''
     # Gradient based training (SGD) parameters
-    # NUM_EPOCHS = 1000
-    # LEARNING_RATE = 0.1
-    # L2_LAMBDA = 1e-2
+    NUM_EPOCHS = 1000
+    LEARNING_RATE = 0.005
+    L2_LAMBDA = 1e-2
 
-    # train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
-    #               num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
-    #               test_xy=test_xy, model_name='sgd-2')
+    train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+                  num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+                  test_xy=test_xy, model_name='sgd-2')
 
     # NUM_EPOCHS = 1000
     # LEARNING_RATE = 0.005
