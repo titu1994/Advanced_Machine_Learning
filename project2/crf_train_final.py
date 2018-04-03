@@ -5,75 +5,69 @@ from scipy.optimize import check_grad, fmin_bfgs
 from project2.utils import prepare_structured_dataset, load_model_params, load_model_params_zeros, compute_word_char_accuracy_score
 from project2.crf_evaluate import decode_crf
 
-def compute_forward_message(x, w, t):
-    w_x = np.dot(x,w.T)
-    num_words = len(w_x)
-    M = np.zeros((num_words, 26))
 
-    # iterate through all characters in each word
-    for i in range(1, num_words):
-        alpha = M[i - 1] + t.transpose()
-        alpha_max = np.max(alpha, axis=1)
-        # prepare V - V.max()
-        alpha = (alpha.transpose() - alpha_max).transpose()
-        M[i] = alpha_max + np.log(np.sum(np.exp(alpha + w_x[i - 1]), axis=1))
+def compute_forward_message(w_x, t):
+    word_len = len(w_x)
+    M = np.zeros((word_len, 26))
+    # set first row to inner <wa, x0> <wb, x0>...
+
+    # iterate through length of word
+    for i in range(1, word_len):
+        vect = M[i - 1] + t.transpose()
+        vect_max = np.max(vect, axis=1)
+        vect = (vect.transpose() - vect_max).transpose()
+        M[i] = vect_max + np.log(np.sum(np.exp(vect + w_x[i - 1]), axis=1))
 
     return M
 
-
-def compute_backward_message(x, w, t):
-    # get the index of the final letter of the word
-    w_x = np.dot(x,w.T)
+def compute_backward_message(w_x, t):
+    #get the index of the final letter of the word
     fin_index = len(w_x) - 1
-    M = np.zeros((len(w_x), 26))
 
-    for i in range(fin_index - 1, -1, -1):
-        beta = M[i + 1] + t
-        beta_max = np.max(beta, axis=1)
-        # prepare V - V.max()
-        beta = (beta.transpose() - beta_max).transpose()
-        M[i] = beta_max + np.log(np.sum(np.exp(beta + w_x[i + 1]), axis=1))
+    #only need to go from the end to stated position
+    M = np.zeros((len(w_x), 26))
+    #now we need taa, tab, tac... because we are starting at the end and working backwards
+    #which is exactly the transposition of the t matrix
+    t_trans = t
+
+    for i in range(fin_index -1, -1, -1):
+        vect = M[i + 1] + t_trans
+        vect_max = np.max(vect, axis = 1)
+        vect = (vect.transpose() - vect_max).transpose()
+        M[i] = vect_max +np.log(np.sum(np.exp(vect + w_x[i+1]), axis =1))
 
     return M
 
 
-def compute_numerator(y, x, w, t):
-    w_x = np.dot(x, w.T)
-    sum_ = 0
-    # for every word
+def compute_numerator(w_x, y, t):
+    # full numerator for an entire word
+    total = 0
+    # go through whole word
     for i in range(len(w_x)):
-        sum_ += w_x[i][y[i]]
-
+        # no matter what add W[actual letter] inner Xi
+        total += w_x[i][y[i]]
         if (i > 0):
-            # t stored as T{current, prev}
-            sum_ += t[y[i - 1]][y[i]]
-
-    return np.exp(sum_)
-
-
-# def compute_denominator(alpha, x, w):
-#     # forward propagate to the end of the word and return the sum
-#     return np.log(np.sum(np.exp(alpha[-1] + np.dot(x,w.T)[-1])))
+            # again we have t stored as Tcur, prev
+            total += t[y[i - 1]][y[i]]
+    return np.exp(total)
 
 
-def compute_denominator(alpha, x, w):
+def compute_denominator(w_x, alpha):
+    #return np.sum(np.exp(alpha[-1] + w_x[-1]))
+
     # forward propagate to the end of the word and return the sum
-    intermediate = alpha[-1] + np.dot(x,w.T)[-1]
+    intermediate = alpha[-1] + w_x[-1]
     max_inter = np.max(intermediate)
     intermediate -= max_inter
     out = max_inter + np.log(np.sum(np.exp(intermediate)))
     return out
 
-
 # convert W into a matrix from its flattened parameters
 def matricize_W(params):
     w = params[:26 * 129]
     w = w.reshape((26, 129))
-
-    #for i in range(26):
-    #    w[i] = params[129 * i: 129 * (i + 1)]
-
     return w
+
 
 def matricize_Tij(params):
     t_ij = params[26 * 129:]
@@ -81,63 +75,27 @@ def matricize_Tij(params):
     return t_ij
 
 
-def compute_gradient_wrt_Wy(X, y, w, t, alpha, beta, denominator):
+def compute_gradient_wrt_Wy(X, y, w_x, alpha, beta, denominator):
     gradient = np.zeros((26, 129))
-
-    w_x = np.dot(X,w.T)
 
     for i in range(len(X)):
         gradient[y[i]] += X[i]
-
-        # for each position, reduce the probability of the character
+        # for each position subtract off the probability of the letter
         temp = np.ones((26, 129)) * X[i]
-        temp = temp.transpose()
-        temp = temp * np.exp((alpha[i] + beta[i] + w_x[i]) - denominator)
-
+        temp = temp.transpose() * np.exp(alpha[i] + beta[i] + w_x[i] - denominator)
         gradient -= temp.transpose()
 
     return gradient.flatten()
 
 
-# def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
-#     gradient = np.zeros(26 * 26)
-#     w_x = np.dot(x,w.T)
-#
-#     for i in range(len(w_x) - 1):
-#         for j in range(26):
-#             #inter = np.exp(np.logaddexp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i], 0))
-#             #gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
-#             gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
-#
-#     # normalize the gradient
-#     gradient /= np.exp(denominator)
-#
-#     # add the gradient for the next word
-#     for i in range(len(w_x) - 1):
-#         t_index = y[i]
-#         t_index += 26 * y[i + 1]
-#         gradient[t_index] += 1
-#
-#     return gradient
-
-def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
-    gradient = np.zeros((26, 26))
-    w_x = np.dot(x, w.T)
-
+def compute_gradient_wrt_Tij(w_x, y, t, alpha, beta, denominator):
+    gradient = np.zeros(26 * 26)
     for i in range(len(w_x) - 1):
-        wx = w_x[i]
-        alpha_i = alpha[i]
-
         for j in range(26):
-            # calculate and normalize gradient in one step
-            gradient[j, :] -= np.exp(wx + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha_i - denominator)
+            gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i] - denominator)
 
-    gradient = gradient.flatten()
+    #gradient /= denominator
 
-    # normalize the gradient
-    #gradient /= np.exp(denominator)
-
-    # add the gradient for the next word
     for i in range(len(w_x) - 1):
         t_index = y[i]
         t_index += 26 * y[i + 1]
@@ -148,16 +106,12 @@ def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
 
 def gradient_per_word(X, y, w, t, word_index, concat_grads=True):
     w_x = np.inner(X[word_index], w)
-    # O(n * |Y|^2)
-    f_mess = compute_forward_message(X[word_index], w, t)
-    # O(n * |Y|^2)
-    b_mess = compute_backward_message(X[word_index], w, t)
-    # O(1)
-    den = compute_denominator(f_mess, X[word_index], w)
-    # O(n * |Y|^2)
-    wy_grad = compute_gradient_wrt_Wy(X[word_index], y[word_index], w, t, f_mess, b_mess, den)
-    # O(n * |Y|^2)
-    t_grad = compute_gradient_wrt_Tij(y[word_index], X[word_index], w, t, f_mess, b_mess, den)
+
+    alpha = compute_forward_message(w_x, t)
+    beta = compute_backward_message(w_x, t)
+    denominator = compute_denominator(w_x, alpha)
+    wy_grad = compute_gradient_wrt_Wy(X[word_index], y[word_index], w_x, alpha, beta, denominator)
+    t_grad = compute_gradient_wrt_Tij(w_x, y[word_index], t, alpha, beta, denominator)
 
     if concat_grads:
         return np.concatenate((wy_grad, t_grad))
@@ -177,80 +131,73 @@ def averaged_gradient(params, X, y, limit):
     return total / (limit)
 
 
-def summed_gradient(params, X, y, limit):
-    w = matricize_W(params)
-    t = matricize_Tij(params)
-
-    total = np.zeros(129 * 26 + 26 ** 2)
-    for i in range(limit):
-        total += gradient_per_word(X, y, w, t, i)
-    return total
+def compute_log_p_y_given_x(w_x, y, t, word_index):
+    f_mess = compute_forward_message(w_x, t)
+    return np.log(compute_numerator(w_x, y, t) / np.exp(compute_denominator(w_x, f_mess)))
 
 
-def compute_log_p_y_given_x(x, w, y, t, word_index):
-    f_mess = compute_forward_message(x, w, t)
-    return np.log((compute_numerator(y, x, w, t)) / np.exp(compute_denominator(f_mess, x, w)))
-
-
-def compute_log_p_y_given_x_avg(params, X, y, limit):
+def compute_log_p_y_given_x_average(params, X, y, limit):
     w = matricize_W(params)
     t = matricize_Tij(params)
 
     total = 0
     for i in range(limit):
-        # w_x = np.dot(X[i], w)
-        total += compute_log_p_y_given_x(X[i],w, y[i], t, i)
-
+        w_x = np.inner(X[i], w)
+        total += compute_log_p_y_given_x(w_x, y[i], t, i)
     return total / (limit)
+
+
+def optimization_function(params, X, y, C, lambd, limit):
+    num_examples = len(X)
+    reg = 1/2 * np.sum(params ** 2)
+    avg_prob = compute_log_p_y_given_x_average(params, X, y, limit)
+    return -C * avg_prob + lambd * reg
+
+
+def d_optimization_function(params, X, y, C, lambd, limit):
+    logloss_gradient = averaged_gradient(params, X, y, limit)
+    l2_loss_gradient = lambd * params
+    return -C * logloss_gradient + l2_loss_gradient
+
+
+def optimization_function_word(X, y, w, t, word_index, C, lambd):
+    l2_loss = 1 / 2 * np.sum(params ** 2)
+
+    w_x = np.inner(X[word_index], w)
+    logloss = compute_log_p_y_given_x(w_x, y, t, word_index)
+
+    return -C * logloss + lambd * l2_loss
+
+
+def d_optimization_function_word(X, y, w, t, word_index, C, lambd):
+    dW, dT = gradient_per_word(X, y, w, t, word_index, concat_grads=False)
+    dW = -C * dW + lambd * w
+    dT = -C * dT + lambd * t
+    return [dW, dT]
 
 
 def check_gradient(params, X, y):
     # check the gradient of the first 10 words
-    grad_value = check_grad(compute_log_p_y_given_x_avg, averaged_gradient, params, X, y, 1)
+    grad_value = check_grad(compute_log_p_y_given_x_average, averaged_gradient, params, X, y, 1)
     print("Gradient check (first word) : ", grad_value)
-
-
-def measure_gradient_computation_time(params, X, y):
-    # this takes 7.2 seconds for us
-    start = time.time()
-    av_grad = averaged_gradient(params, X, y, len(X))
-    print("Total time:", time.time() - start)
-
-    with open("result/gradient.txt", "w") as text_file:
-        for i, elt in enumerate(av_grad):
-            text_file.write(str(elt))
-            text_file.write("\n")
-
-
-def optimization_function(params, X, y, C, limit):
-    l2_regularization = 1 / 2 * np.sum(params ** 2)
-    log_loss = compute_log_p_y_given_x_avg(params, X, y, limit)
-    return -C * log_loss + l2_regularization
-
-
-def d_optimization_function(params, X, y, C, limit):
-    logloss_gradient = averaged_gradient(params, X, y, limit)
-    l2_loss_gradient = params
-    return -C * logloss_gradient + l2_loss_gradient
 
 
 def check_gradient_optimization(params, X, y):
     # check the gradient of the first 10 words
-    grad_value = check_grad(optimization_function, d_optimization_function, params, X, y, 1, 1)
+    grad_value = check_grad(optimization_function, d_optimization_function, params, X, y, 1, 1., 1)
     print("Gradient optimization check (first word) : ", grad_value)
 
 
-def train_crf_lbfgs(params, X, y, C, model_name):
-    print("Optimizing parameters. This will take a long time (at least 1 hour per model).")
-
+def train_crf_lbfgs(params, X, y, X_test, y_test, C, lambd, model_name):
     start = time.time()
-    out = fmin_bfgs(optimization_function, params, d_optimization_function, (X, y, C, len(X)), disp=1)
-    print("Total time: ", end='')
+    out = fmin_bfgs(optimization_function, params, d_optimization_function, (X, y, C, lambd), gtol = 0.01)
+    print("Total time: ", end = '')
     print(time.time() - start)
 
     with open("result/" + model_name + ".txt", "w") as text_file:
         for i, elt in enumerate(out):
             text_file.write(str(elt) + "\n")
+
 
 
 def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy, model_name):
@@ -265,6 +212,14 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
     # make results reproducible
     np.random.seed(1)
 
+    W_running_avg = np.zeros_like(W)
+    T_running_avg = np.zeros_like(T)
+
+    MOMENTUM = 0.9
+
+    W_old_avg = np.copy(W_running_avg)
+    T_old_avg = np.copy(T_running_avg)
+
     start = time.time()
     for epoch in range(num_epochs):
         print("Begin epoch %d" % (epoch + 1))
@@ -273,27 +228,24 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
         np.random.shuffle(indices)
 
         for i, word_index in enumerate(indices):
-            W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
+            W_grad, T_grad = d_optimization_function_word(X, y, W, T, word_index, C, l2_lambda)
 
-            W_grad = -W_grad + l2_lambda * W
-            T_grad = -T_grad + l2_lambda * T
-
-            #W_grad /= np.linalg.norm(W_grad)
-            #T_grad /= np.linalg.norm(T_grad)
+            W_running_avg = MOMENTUM * W_running_avg + (1. - MOMENTUM) * W_grad
+            T_running_avg = MOMENTUM * T_running_avg + (1. - MOMENTUM) * T_grad
 
             # perform SGD update
-            W -= learning_rate * (W_grad)
-            T -= learning_rate * (T_grad)
+            W -= learning_rate * W_running_avg
+            T -= learning_rate * T_running_avg
 
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 params = np.concatenate((W.flatten(), T.flatten()))
-                logloss = optimization_function(params, X, y, C, num_words)
+                logloss = optimization_function(params, X, y, C, l2_lambda, num_words)
                 print("Epoch %d Iter %d : Logloss : " % (epoch + 1, i), logloss)
                 print("W norm", np.linalg.norm(W))
                 print("T norm", np.linalg.norm(T))
 
             learning_rate *= 0.999
-            learning_rate = max(learning_rate, 1e-4)
+            learning_rate = max(learning_rate, 5e-4)
 
             #print("W norm", np.linalg.norm(W))
             #print("T norm", np.linalg.norm(T))
@@ -305,21 +257,44 @@ def train_crf_sgd(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_xy
         print("Learning rate : ", learning_rate)
 
         params = np.concatenate((W.flatten(), T.flatten()))
-        logloss = optimization_function(params, X, y, C, num_words)
+        logloss = optimization_function(params, X, y, C, l2_lambda, num_words)
         print("Logloss : ", logloss)
+        print()
 
-        if (epoch + 1) % 5 == 0:
-            print('*' * 80)
-            print("Computing metrics after end of epoch %d" % (epoch + 1))
-            # print evaluation metrics every 1000 steps of SGD
-            train_loss = optimization_function(params, X, y, C, num_words)
+        moving_sum = np.sum(W_running_avg ** 2) + np.sum(T_running_avg ** 2)
+        old_moving_sum = np.sum(W_old_avg ** 2) + np.sum(T_old_avg ** 2)
 
-            y_preds = decode_crf(test_X, W, T)
-            word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
+        if abs(moving_sum - old_moving_sum) < 1e-3:
+            print("Gradient difference is small enough. Early stopping..")
+            break
+        else:
+            W_old_avg = W_running_avg
+            T_old_avg = T_running_avg
 
-            print("Epoch %d | Train loss = %0.8f | Word Accuracy = %0.5f | Char Accuracy = %0.5f" %
-                  (epoch + 1, train_loss, word_acc, char_acc))
-            print('*' * 80, '\n')
+        # if (epoch + 1) % 5 == 0:
+        #     print('*' * 80)
+        #     print("Computing metrics after end of epoch %d" % (epoch + 1))
+        #     # print evaluation metrics every 1000 steps of SGD
+        #     train_loss = optimization_function(params, X, y, C, l2_lambda, num_words)
+        #
+        #     y_preds = decode_crf(test_X, W, T)
+        #     word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
+        #
+        #     print("Epoch %d | Train loss = %0.8f | Word Accuracy = %0.5f | Char Accuracy = %0.5f" %
+        #           (epoch + 1, train_loss, word_acc, char_acc))
+        #     print('*' * 80, '\n')
+
+    print('*' * 80)
+    print("Computing metrics after end of epoch")
+    # print evaluation metrics every 1000 steps of SGD
+    train_loss = optimization_function(params, X, y, C, l2_lambda, num_words)
+
+    y_preds = decode_crf(test_X, W, T)
+    word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
+
+    print("Epoch %d | Train loss = %0.8f | Word Accuracy = %0.5f | Char Accuracy = %0.5f" %
+          (epoch + 1, train_loss, word_acc, char_acc))
+    print('*' * 80, '\n')
 
     # merge the two grads into a single long vector
     out = np.concatenate((W.flatten(), T.flatten()))
@@ -456,6 +431,15 @@ def get_trained_model_parameters(model_name):
     return np.array(params)
 
 
+def get_trained_model_parameters_gradient_descent(model_name):
+    file = open('result/' + model_name + '.txt', 'r')
+    params = []
+    for i, elt in enumerate(file.read().split()):
+        params.append(float(elt))
+    return np.array(params)
+
+
+
 if __name__ == '__main__':
 
     ''' check gradients and write to file '''
@@ -486,13 +470,15 @@ if __name__ == '__main__':
     Run optimization. For C= 1000 it takes about an 56 minutes
     '''
     # Gradient based training (SGD) parameters
-    NUM_EPOCHS = 1000
-    LEARNING_RATE = 0.001
+    NUM_EPOCHS = 100
+    LEARNING_RATE = 0.005
     L2_LAMBDA = 1e-2
 
     train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
                   num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
                   test_xy=test_xy, model_name='sgd-2')
+
+    #exit()
 
     # NUM_EPOCHS = 1000
     # LEARNING_RATE = 0.005
@@ -511,17 +497,17 @@ if __name__ == '__main__':
     #               test_xy=test_xy, model_name='sgd-6')
 
     # Gradient based training (ADAM + Optional AMSGrad) parameters
-    NUM_EPOCHS = 1000
-    LEARNING_RATE = 0.001
-    L2_LAMBDA = 1e-2 # 1e-2
-
-    AMSGRAD = True
-    BETA2 = 0.999
-
-    train_crf_adam(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
-                   num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
-                   test_xy=test_xy, model_name='adam-2',
-                   beta2=BETA2, amsgrad=AMSGRAD)
+    # NUM_EPOCHS = 1000
+    # LEARNING_RATE = 0.001
+    # L2_LAMBDA = 1e-2 # 1e-2
+    #
+    # AMSGRAD = True
+    # BETA2 = 0.999
+    #
+    # train_crf_adam(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+    #                num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+    #                test_xy=test_xy, model_name='adam-2',
+    #                beta2=BETA2, amsgrad=AMSGRAD)
 
     # NUM_EPOCHS = 1000
     # LEARNING_RATE = 0.001
@@ -547,11 +533,11 @@ if __name__ == '__main__':
     #               test_xy=test_xy, model_name='adam-6',
     #                beta2=BETA2, amsgrad=AMSGRAD)
 
-    params = get_trained_model_parameters('sgd-2')
+    params = get_trained_model_parameters_gradient_descent('sgd-2')
     w = matricize_W(params)
     t = matricize_Tij(params)
 
-    print("Function value: ", optimization_function(params, X_train, y_train, C=1, limit=len(X_train)))
+    print("Function value: ", optimization_function(params, X_train, y_train, C=1, lambd=L2_LAMBDA, limit=len(X_train)))
 
     ''' accuracy '''
     y_preds = decode_crf(X_test, w, t)
