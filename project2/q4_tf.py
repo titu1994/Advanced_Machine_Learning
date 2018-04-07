@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import tensorflow as tf
 from tensorflow.contrib.crf.python.ops.crf import crf_decode, crf_log_likelihood
 from tensorflow.contrib.opt.python.training.external_optimizer import ScipyOptimizerInterface
@@ -10,6 +11,7 @@ from project2.utils import load_dataset_as_dictionary, calculate_word_lengths_fr
 
 RESTORE_CHECKPOINT = False
 C = 1
+LAMBDA = 1e-6
 
 train_dataset, test_dataset = load_dataset_as_dictionary()
 train_word_lengths = calculate_word_lengths_from_dictionary(train_dataset)
@@ -20,6 +22,7 @@ X_test, y_test = prepare_dataset_from_dictionary(test_dataset, test_word_lengths
 
 print("Train shape : ", X_train.shape, y_train.shape)
 print("Test shape : ", X_test.shape, y_test.shape)
+print("Lambda : ", LAMBDA)
 
 num_train_examples = len(train_word_lengths)
 num_test_examples = len(test_word_lengths)
@@ -29,6 +32,8 @@ num_test_words = X_test.shape[1]  # random
 
 num_features = X_train.shape[2]  # 128
 num_tags = 26  # 26
+
+t1 = time.time()
 
 with tf.Session() as sess:
     x_t = tf.constant(X_train, dtype=tf.float32, name='X_train')
@@ -67,9 +72,9 @@ with tf.Session() as sess:
 
     # Add a training op to tune the parameters.
     loss = -C * tf.reduce_mean(log_likelihood)
-    loss += 1e-2 * tf.nn.l2_loss(w_t)
-    # loss += 0.5 * tf.reduce_sum(tf.square(transition_weights_t))
-    loss += 1e-2 * tf.nn.l2_loss(transition_weights_t)
+    loss += LAMBDA * tf.nn.l2_loss(w_t)
+    loss += LAMBDA * 0.5 * tf.reduce_sum(tf.square(transition_weights_t))
+    #loss += 1e-2 * tf.nn.l2_loss(transition_weights_t)
 
     global_step = tf.Variable(0, trainable=False, name='global_step')
 
@@ -123,3 +128,5 @@ with tf.Session() as sess:
             count = test_word_lengths[i]
             for x in row[:count]:
                 f.write(str(x + 1) + "\n")
+
+    print("Time : %0.2f seconds" % (time.time() - t1))
