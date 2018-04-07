@@ -1,0 +1,213 @@
+% -----------------------------*- LaTeX -*------------------------------
+%   SCRIBE.STY -- Make scribe notes
+%
+%   Martin Wainwright;  August, 2004
+%
+%   Modified from a version by Jeff Erickson (jeffe@cs.uiuc.edu), July 29, 1998
+%
+%   Loosely based on the MIT/Berkeley scribe notes macros, but
+%   written from scratch.
+%
+% ----------------------------------------------------------------------
+%   USAGE:
+%
+%   \documentstyle[12pt]{report}        NOT article!
+%   \usepackage{scribe}
+%   ...
+%   \begin{document}
+%   \course{EECS 227}               optional
+%   \coursetitle{Optimization}  optional
+%   \semester{Fall 2004}            optional
+%   \stuname{Jeff Erickson}            optional
+%   \scribe{Joe. A Student}         required
+%   \lecturenumber{17}              required (must be a number)
+%   \lecturedate{October 12}            required (omit year)
+%   \maketitle
+% ----------------------------------------------------------------------
+%   The stuff before \maketitle can be in any order, but it has to go
+%   before \maketitle.
+%
+%   The lecture number appears in all page, section, theorem, figure,
+%   table, and equation numbers.  It must be a single positive
+%   integer; ranges like 3--5 are not (yet) properly supported.
+%
+%   Automatically loads the amsmath package, which is a Good Thing,
+%   especially if you're going to use a lot of math.  See ``The LaTeX
+%   Companion'' for details!
+%
+%   To get a proof, use \begin{proof}...\end{proof}.  You can attach
+%   an optional argument, just as with the standard latex theorem
+%   environment.  You can also define new proof-like environments with
+%   \newproof{foo}{bar}, just like \newtheorem.
+% ----------------------------------------------------------------------
+\RequirePackage{amsmath,amssymb,ragged2e,latexsym,amsthm,graphicx}	%
+
+\usepackage[citecolor=blue, linkcolor=blue,colorlinks]{hyperref}
+
+\def\stuinfo#1#2{\def\@stuname{#1}\def\@stuemail{#2}}
+
+\def\lecturenumber#1{\def\@lecturenumber{#1}}
+% \@lecturenumber intentionally undefined
+
+\def\duedate#1{\def\@duedate{#1}}
+% \@lecturedata intentionally undefined
+
+\def\xxx{\vphantom{()}}
+\def\maketitle
+{
+\def\@oddhead{\underline{\hbox to\textwidth{\textbf{%
+    \rlap{CS 594\phantom{()}}\hfil
+    Project 1: Convex Optimization
+    \hfil\llap{Spring 2018}}}}}
+\def\@oddfoot{\hfil\thepage\hfil}
+\def\ps@myfirst{\ps@plain\def\@oddfoot{\hfil\thepage\hfil}}
+\thispagestyle{myfirst}
+\noindent
+\framebox[\textwidth]{\vbox to 0.75in{
+\hbox to\textwidth{~\textbf{\rlap{CS 594: Advanced Machine Learning\xxx}
+    \hfil\llap{Due: \@duedate}}~}
+\vss
+\hbox to \textwidth{\Large\hfill Project 2: Convex Optimization~\hfill}
+\vss
+\hbox to \textwidth{~\textsl{\rlap{Student: \@stuname\xxx}
+    \hfill\llap{Email: \@stuemail}}~}
+}}
+%\setcounter{chapter}{\@lecturenumber}
+\bigskip
+}
+
+%\newtheorem{theorem}{Theorem}
+
+
+% ----------------------------------------------------------------------
+%  Add a period after the theorem number, and make theorems slanted
+%  instead of italic to help distinguish text from math.
+% ----------------------------------------------------------------------
+\def\@begintheorem#1#2{\trivlist \item[\hskip \labelsep{\bf #1\ #2.}]\sl}
+\def\@opargbegintheorem#1#2#3{\trivlist
+      \item[\hskip \labelsep{\bf #1\ #2\ (#3).}]\sl}
+
+% ----------------------------------------------------------------------
+%  Standard lemma, theorem, and corollary environments.
+% ----------------------------------------------------------------------
+%\newtheorem{lemma}{Lemma}[Theorem]
+%\newtheorem{theorem}[lemma]{Theorem}
+%\newtheorem{corollary}[lemma]{Theorem}
+
+% ----------------------------------------------------------------------
+%  \newproof{type}{Text}[post] -- Define a new proof-like environment.
+%  Proofs are just like theorems, except they aren't numbered, and
+%  their text is (by default) set in roman type.  Proofs can take
+%  optional arguments, just like theorems.  The optional ``post''
+%  argument specifies a postscript, like a QED symbol.
+% ----------------------------------------------------------------------
+\def\newproof#1#2{\@ifnextchar[{\@xnproof{#1}{#2}}{\@xnproof{#1}{#2}[]}}
+
+\def\@xnproof#1#2[#3]{\expandafter\@ifdefinable\csname #1\endcsname
+{\global\@namedef{#1}{\@prf{#2}}\global\@namedef{end#1}{\@endprf{#3}}}}
+
+\def\@prf#1{\@ifnextchar[{\@xprf{#1}}{\@yprf{#1}}}
+
+\def\@xprf#1[#2]{\begin{trivlist}\item[\hskip\labelsep{\bf #1\ (#2):}]}
+
+\def\@yprf#1{\begin{trivlist}\item[\hskip\labelsep{\bf #1:}]}
+
+\def\@endprf#1{#1\end{trivlist}}
+
+% ----------------------------------------------------------------------
+%  Standard proof environment.
+% ----------------------------------------------------------------------
+%\@ifundefined{square}{\let\square\Box}{}
+%\def\QED{{\boldmath$\square$}}
+%\def\markatright#1{\leavevmode\unskip\nobreak\quad\hspace*{\fill}{#1}}
+%\def\qed{\markatright{\QED}}
+%\newproof{myproof}{Proof}[\qed]
+%\newproof{mysolution}{Solution}
+
+% ----------------------------------------------------------------------
+%  Make captions smaller than the text, make their titles bold.
+%  Arguments:   #1 == figure name: "Figure 5"
+%               #2 == caption: "Papers by \Erdos, 1900--2000 (projected)"
+%  Put less space after floats, since captions are smaller
+% ----------------------------------------------------------------------
+\long\def\@makecaption#1#2{
+   \vskip 10pt
+   \setbox\@tempboxa\hbox{{\small \textbf{#1.} #2}}
+   \ifdim \wd\@tempboxa >\hsize         % IF longer than one line:
+       {\footnotesize \textbf{#1.} #2\par}% THEN set as ordinary paragraph.
+     \else                              %   ELSE  center.
+       \hbox to\hsize{\hfil\box\@tempboxa\hfil}
+   \fi}
+\dbltextfloatsep 18pt plus 2pt minus 4pt   % was 20pt plus 2pt minus 4pt
+\textfloatsep 18pt plus 2pt minus 4pt      % was 20pt plus 2pt minus 4pt
+
+% ----------------------------------------------------------------------
+%  Dangerous bend environments, stolen from TeXbook and slightly
+%  massaged.
+%
+%  Invoke as \begin{[d]danger}...\end{[d]danger}.  The enclosed text
+%  is offset just like any other list (theorem, proof, etc.)  Puts
+%  sign[s] in front of first two lines of first paragraph, which are
+%  (supposedly) never split by a page boundary.  Does NOT shrink or
+%  otherwise modify the text.
+% ----------------------------------------------------------------------
+%  The dangerous bend signs are the correct size to match two lines of
+%  Computer Modern 9pt type.   We really ought to scale them up to
+%  fit whatever size we're using, but we don't.  Unfortunately, manfnt
+%  is actually a 10pt font, so if we want to match 11pt Computer
+%  Modern, we have to scale manfnt to 12.222222pt!  Thanks, Don.
+% ----------------------------------------------------------------------
+\font\manual=manfnt
+\def\dbend{{\manual\char127}} % dangerous bend sign
+
+% Danger, Will Robinson!
+\def\danger{\begin{trivlist}\item[]\noindent%
+\begingroup\hangindent=3pc\hangafter=-2%\clubpenalty=10000%
+\def\par{\endgraf\endgroup}%
+\hbox to0pt{\hskip-\hangindent\dbend\hfill}\ignorespaces}
+\def\enddanger{\par\end{trivlist}}
+
+% Danger! Danger!
+\def\ddanger{\begin{trivlist}\item[]\noindent%
+\begingroup\hangindent=3pc\hangafter=-2%\clubpenalty=10000%
+\def\par{\endgraf\endgroup}%
+\hbox to0pt{\hskip-\hangindent\dbend\kern2pt\dbend\hfill}\ignorespaces}
+\def\endddanger{\par\end{trivlist}}
+
+
+
+% Formatting
+\oddsidemargin .00in
+\evensidemargin .00in
+\marginparwidth 0.07 true in
+\addtolength{\headsep}{0.0in}
+\textheight 8.8 true in
+\textwidth 6.5 true in
+\clubpenalty=10000
+%\renewcommand{\raggedright}{\leftskip=0pt \rightskip=0pt plus 0cm}
+%\raggedright
+\parindent=0in
+\setlength{\parskip}{0.1em}
+%\renewcommand{\baselinestretch}{1.5}
+\parskip=12pt
+\topmargin -0.5in
+
+% sections
+\def\thesection {\arabic{section}}
+\def\thesubsection {\thesection.\arabic{subsection}}
+\def\section{\@startsection{section}{1}{\z@}{-0.12in}{0.02in}
+             {\large\bf\raggedright}}
+\def\subsection{\@startsection{subsection}{2}{\z@}{-0.10in}{0.01in}
+                {\normalsize\bf\raggedright}}
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}{-0.08in}{0.01in}
+                {\normalsize\sc\raggedright}}
+\def\paragraph{\@startsection{paragraph}{4}{\z@}{1.5ex plus
+  0.5ex minus .2ex}{-1em}{\normalsize\bf}}
+\def\subparagraph{\@startsection{subparagraph}{5}{\z@}{1.5ex plus
+  0.5ex minus .2ex}{-1em}{\normalsize\bf}}
+
+
+
+
+
+

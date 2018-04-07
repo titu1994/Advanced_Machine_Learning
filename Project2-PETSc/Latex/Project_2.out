@@ -1,0 +1,11 @@
+\BOOKMARK [1][-]{section.0.1}{Conditional Random Fields}{}% 1
+\BOOKMARK [2][-]{subsection.0.1.1}{Gradient formula}{section.0.1}% 2
+\BOOKMARK [2][-]{subsection.0.1.2}{IID model}{section.0.1}% 3
+\BOOKMARK [1][-]{section.0.2}{Parallel Optimization: Implementation Details and Facilities Provided}{}% 4
+\BOOKMARK [2][-]{subsection.0.2.1}{Data loading}{section.0.2}% 5
+\BOOKMARK [2][-]{subsection.0.2.2}{Implementation of IID modeling}{section.0.2}% 6
+\BOOKMARK [2][-]{subsection.0.2.3}{Suggestions on CRF implementation}{section.0.2}% 7
+\BOOKMARK [2][-]{subsection.0.2.4}{Inference}{section.0.2}% 8
+\BOOKMARK [2][-]{subsection.0.2.5}{Other miscellaneous}{section.0.2}% 9
+\BOOKMARK [1][-]{section.0.3}{Parallel Optimization: Tasks for Experiment}{}% 10
+\BOOKMARK [1][-]{section.0.4}{Comparison with Stochastic Optimization}{}% 11

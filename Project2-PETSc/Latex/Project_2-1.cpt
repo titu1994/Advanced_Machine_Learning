@@ -1,0 +1,8 @@
+
+  \begin{minipage}{16cm}
+In \verb!appctx.hpp!, the matrix variable \verb!data! in the \verb!AppCtx! structure
+is already $\Xnew$,
+\ie\ already replicated logically for 26 times.
+So is the test data matrix \verb!tdata!.
+  \end{minipage}
+^^E^^L 
