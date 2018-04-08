@@ -335,15 +335,15 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
         np.random.shuffle(indices)
 
         for i, word_index in enumerate(indices):
-            W_grad, T_grad = gradient_per_word(X, y, W, T, word_index, concat_grads=False)
+            W_grad, T_grad = d_optimization_function_word(X, y, W, T, word_index, C, l2_lambda)
 
             # ADAM updates to Momentum params
             M['W'] = beta1 * M['W'] + (1 - beta1) * W_grad
             M['T'] = beta1 * M['T'] + (1 - beta1) * T_grad
 
             # ADAM updates to RMSProp params
-            R['W'] = beta2 * R['W'] + (1 - beta2) * W_grad ** 2
-            R['T'] = beta2 * R['T'] + (1 - beta2) * T_grad ** 2
+            R['W'] = beta2 * R['W'] + (1 - beta2) * (W_grad ** 2)
+            R['T'] = beta2 * R['T'] + (1 - beta2) * (T_grad ** 2)
 
             if not amsgrad:
                 # ADAM Update
@@ -357,8 +357,8 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 lr_t = learning_rate / (np.sqrt(r_k_t) + epsilon)
 
                 # perform ADAM update
-                W -= lr_m * (C * m_k_w + epsilon + l2_lambda * W)
-                T -= lr_t * (C * m_k_t + epsilon + l2_lambda * T)
+                W -= lr_m * (m_k_w)
+                T -= lr_t * (m_k_t)
 
             else:
                 # AMSGrad Update
@@ -375,8 +375,8 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
                 lr_t = learning_rate / (np.sqrt(r_k_t) + epsilon)
 
                 # perform AMSGrad update
-                W -= lr_m * (C * m_k_w + l2_lambda * W)
-                T -= lr_t * (C * m_k_t + l2_lambda * T)
+                W -= lr_m * (m_k_w)
+                T -= lr_t * (m_k_t)
 
                 R['W'] = R_hat['W']
                 R['T'] = R_hat['T']
@@ -397,14 +397,14 @@ def train_crf_adam(params, X, y, C, num_epochs, learning_rate, l2_lambda, test_x
         params = np.concatenate((W.flatten(), T.flatten()))
         print("W norm", np.linalg.norm(W))
         print("T norm", np.linalg.norm(T))
-        logloss = optimization_function(params, X, y, C, num_words)
+        logloss = optimization_function(params, X, y, C, num_words, num_words)
         print("Logloss : ", logloss)
 
         if (epoch + 1) % 5 == 0:
             print('*' * 80)
             print("Computing metrics after end of epoch %d" % (epoch + 1))
             # print evaluation metrics every 1000 steps of SGD
-            train_loss = optimization_function(params, X, y, C, num_words)
+            train_loss = optimization_function(params, X, y, C, num_words, num_words)
 
             y_preds = decode_crf(test_X, W, T)
             word_acc, char_acc = compute_word_char_accuracy_score(y_preds, test_Y)
@@ -450,6 +450,19 @@ if __name__ == '__main__':
     check_gradient_optimization(params, X, y)
     # measure_gradient_computation_time(params, X, y)
 
+    w = matricize_W(params)
+    t = matricize_Tij(params)
+
+    word_index = 0
+    lambd = 1e-2
+    #optimization_val = optimization_function_word(X, y, w, t, word_index, C=1, lambd=lambd)
+    W_grad, T_grad = d_optimization_function_word(X, y, w, t, word_index, C=1, lambd=lambd)
+
+    print('norm(W grad)', np.linalg.norm(W_grad), 'W grad', W_grad)
+    print('norm (T)', np.linalg.norm(T_grad), 'T grad', T_grad)
+
+    exit()
+
     # sum_of_gradients = summed_gradient(params, X, y, len(X))
     # sum_grad_norm = np.linalg.norm(sum_of_gradients)
     # print('Stats (Sum of gradients) :', np.max(sum_of_gradients), np.min(sum_of_gradients), np.mean(sum_of_gradients), np.std(sum_of_gradients))
@@ -470,15 +483,13 @@ if __name__ == '__main__':
     Run optimization. For C= 1000 it takes about an 56 minutes
     '''
     # Gradient based training (SGD) parameters
-    NUM_EPOCHS = 100
-    LEARNING_RATE = 0.005
-    L2_LAMBDA = 1e-2
-
-    train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
-                  num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
-                  test_xy=test_xy, model_name='sgd-2')
-
-    #exit()
+    # NUM_EPOCHS = 100
+    # LEARNING_RATE = 0.005
+    # L2_LAMBDA = 1e-2
+    #
+    # train_crf_sgd(params, X_train, y_train, C=1, l2_lambda=L2_LAMBDA,
+    #               num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE,
+    #               test_xy=test_xy, model_name='sgd-2')
 
     # NUM_EPOCHS = 1000
     # LEARNING_RATE = 0.005
