@@ -7,10 +7,11 @@ from proj2.crf_train import *
 from proj2.crf_evaluate import decode_crf
 
 
-# computes a cyclic learning rate schedule, where after every "stepsize" number of iterations,
+# computes a cyclic learning rate schedule, where after every "stepsize_mult" number of iterations,
 # the learning rate will switch from decreasing to increasing and vice versa
 # This helps in speeding up convergence
 def get_cyclic_triangular_lr(iteration, stepsize, current_lr, max_lr):
+    stepsize = int(stepsize)
     cycle = np.floor(1 + iteration / (2 * stepsize))
     x = np.abs(iteration / stepsize - 2 * cycle + 1)
     lr = current_lr + (max_lr - current_lr) * np.maximum(0, (1 - x))
@@ -18,7 +19,7 @@ def get_cyclic_triangular_lr(iteration, stepsize, current_lr, max_lr):
 
 
 def adam_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100,
-             beta1=0.9, beta2=0.999, epsilon=1e-8, tol=1e-6, min_lr=1e-3):
+             beta1=0.9, beta2=0.999, epsilon=1e-8, tol=1e-6, min_lr=1e-3, cyclic_stepsize_mult=3.):
 
     num_words = len(X_train)
     max_lr = learning_rate
@@ -58,7 +59,7 @@ def adam_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoc
             m_t_hat = M / (1. - beta1 ** iteration)
             v_t_hat = V / (1. - beta2 ** iteration)
 
-            learning_rate = get_cyclic_triangular_lr(iteration, stepsize=num_words * 3,
+            learning_rate = get_cyclic_triangular_lr(iteration, stepsize=num_words * cyclic_stepsize_mult,
                                                      current_lr=learning_rate, max_lr=max_lr)
 
             params = params - (learning_rate * m_t_hat) / (np.sqrt(v_t_hat) + epsilon)
@@ -113,12 +114,14 @@ if __name__ == '__main__':
     TOLS = [1e-8] # [2e-6, 1e-8, 1e-8]
     MIN_LRS = [1e-2] # [5e-3, 2e-2, 1e-2]
     MAX_NUM_EPOCHS = [100] # [100, 100, 150]
+    CYCLIC_STEPSIZE_MULT = [0.5] # [3., 0.5, 3.]
 
     OPTIMIZATION_NAME = "ADAM"
 
     FILENAME_FMT = "%s_%s.txt"
 
-    for lambd, lr, tol, min_lr, num_epochs in zip(LAMBDAS, LEARNING_RATES, TOLS, MIN_LRS, MAX_NUM_EPOCHS):
+    for lambd, lr, tol, min_lr, num_epochs, stepsize_mult in zip(LAMBDAS, LEARNING_RATES, TOLS,
+                                                                 MIN_LRS, MAX_NUM_EPOCHS, CYCLIC_STEPSIZE_MULT):
         params = np.zeros(129 * 26 + 26 ** 2)
         filepath = FILENAME_FMT % (OPTIMIZATION_NAME, lambd)
 
@@ -129,7 +132,7 @@ if __name__ == '__main__':
                                   learning_rate=lr,
                                   callback_fn=callback.callback_fn_return_vals,
                                   n_epoch=num_epochs, beta2=0.999,
-                                  tol=tol, min_lr=min_lr)
+                                  tol=tol, min_lr=min_lr, cyclic_stepsize_mult=stepsize_mult)
 
         w = matricize_W(optimal_params)
         t = matricize_Tij(optimal_params)
