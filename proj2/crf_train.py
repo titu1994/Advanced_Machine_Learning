@@ -106,23 +106,80 @@ def gradient_word(X, y, w, t, word_num):
     return np.concatenate((wy_grad, t_grad))
 
 
-def gradient_word_mcmc(X, y, w, t, word_num):
-    indices = np.arange(len(X[word_num]), dtype=int)
-    index = int(np.random.choice(indices, size=1))
+def gradient_word_mcmc(X, y, w, t, word_num, num_samples):
+    sampled_letters = []
+    sampled_labels = []
+    sampled_indices = []
+    for i in range(num_samples):
+        indices = np.arange(len(X[word_num]), dtype=int)
+        index = int(np.random.choice(indices, size=1))
 
-    sampled_word = X[word_num][index]
-    sampled_labels = y[word_num][index]
+        sampled_indices.append(index)
+        sampled_letter = X[word_num][index]
+        sampled_label = y[word_num][index]
 
-    sampled_word = np.array([sampled_word])
-    sampled_labels = np.array([sampled_labels])
+        sampled_letters.append(sampled_letter)
+        sampled_labels.append(sampled_label)
 
-    w_x = np.inner(sampled_word, w)
+    w_x = np.inner(X, w)
     f_mess = forward_propogate(w_x, t)
     b_mess = back_propogate(w_x, t)
     den = denominator(f_mess, w_x)
-    wy_grad = grad_wrt_wy(sampled_word, sampled_labels, w_x, t, f_mess, b_mess, den)
-    t_grad = grad_wrt_t(sampled_labels, w_x, t, f_mess, b_mess, den)
+    wy_grad = grad_wrt_wy_mcmc(X[word_num], y[word_num], w_x, t, f_mess, b_mess, den, sampled_indices, sampled_letters, sampled_labels)
+    t_grad = grad_wrt_t_mcmc(y[word_num], w_x, t, f_mess, b_mess, den, sampled_indices, sampled_letters, sampled_labels)
+
     return np.concatenate((wy_grad, t_grad))
+
+
+def grad_wrt_wy_mcmc(X, y, w_x, t, f_mess, b_mess, den, sampled_indices, sampled_letters, sampled_labels):
+    gradient = np.zeros((26, 129))
+
+    # for i in range(len(sampled_indices)):
+    #     temp = np.ones((26, 129)) * sampled_letters[i]
+    #     for j in range(26):
+    #         gradient[j] += sampled_letters[i]
+    #         # temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
+    #         t = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
+    #         print(t.shape)
+    #         print(temp.shape)
+    #         temp *= t.transpose()
+    #         # temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
+    #         # fix this
+    #     gradient -= temp
+
+    # gradient = np.zeros((26, 129))
+    # for i in range(len(X)):
+    #     gradient[y[i]] += X[i]
+    #     # for each position subtract off the probability of the letter
+    #     temp = np.ones((26, 129)) * X[i]
+    #     temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
+    #     gradient -= temp.transpose()
+
+    for i in range(len(X)):
+        gradient[y[i]] += X[i]
+        temp = np.ones((26, 129)) * X[i]
+        for j in range(26):
+            temp = temp.transpose()
+
+
+    return gradient.flatten()
+
+
+def grad_wrt_t_mcmc(y, w_x, t, f_mess, b_mess, den, sampled_indices, sampled_letters, sampled_labels):
+    gradient = np.zeros(26 * 26)
+    for i in range(len(w_x) - 1):
+        for j in range(26):
+            gradient[j * 26: (j + 1) * 26] -= np.exp(
+                w_x[i] + t.transpose()[j] + w_x[i + 1][j] + b_mess[i + 1][j] + f_mess[i])
+
+    gradient /= den
+
+    for i in range(len(w_x) - 1):
+        t_index = y[i]
+        t_index += 26 * y[i + 1]
+        gradient[t_index] += 1
+
+    return gradient
 
 
 def gradient_avg(params, X, y, up_to_index):
@@ -187,10 +244,10 @@ def grad_func_word(params, X_train, y_train, word_num, l):
     return - grad_avg + l * grad_reg
 
 
-def grad_func_word_mcmc(params, X_train, y_train, word_num, l):
+def grad_func_word_mcmc(params, X_train, y_train, word_num, l, num_samples):
     w = matricize_W(params)
     t = matricize_Tij(params)
-    grad_avg = gradient_word_mcmc(X_train, y_train, w, t, word_num)
+    grad_avg = gradient_word_mcmc(X_train, y_train, w, t, word_num, num_samples)
     grad_reg = params
     return - grad_avg + l * grad_reg
 
