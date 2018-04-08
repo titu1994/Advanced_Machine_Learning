@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage{subfigure}
 \usepackage{pgfplots}
+\usepackage{hyperref}
 \graphicspath{ {images/} }
 
 \input{./Definitions}
@@ -1024,9 +1025,45 @@ What conclusion can be drawn from these figures?
 \end{figure}
 
 
+
+{\bf Answer S1.}
+%
+\subsection{Observations from loss plot}
+
+We find that from the observed global minimum values of $\{6.38, 2.12, 1.61\}$ for the values of $\lambda$ = \{1e{-2}, 1e{-4}, 1e{-6}\} respectively, the stochastic optimization algorithms reach the same values, or are close to it.
+
+Due to the use of a cyclic learning rate with Adam + AMSGrad, we observe a more erratic learning curve for that optimizer, which is due the cyclic increase of the learning rate from the triangular waveform schedule. 
+
+In addition, we also observe cases where SGD does worse than Adam, especially in the case where $\lambda = 1e-6$. In this case, the global minima is \textit{1.61}, however Adam only approaches \textit{1.73} and SGD only approaches \textit{1.77}. We can observe during the final stages of 150 epochs of training, that the average gradient value is in the magnitude of \textit{1e-8}, and therefore this observation is due to simply insufficient training.
+
+
+
 {\bf Question S2.}
 What is your general experience of tuning the parameters of the solvers in {\bf Question S1}?
 You do not need to be exhaustive, and just briefly describe what you tried and what you found.
+
+{\bf Answer S2.}
+%
+
+{\bf S2.1 Stochastic Gradient Descent with Nesterov Momentum}
+
+We utilize Nesterov Momentum with Stochastic Gradient Descent to increase the speed of convergence on all of our models, with the default \textit{momentum} hyperparameter value of $\gamma$ to be \textit{0.9}. 
+
+For the learning rate decay schedule, we chose a custom exponential decay schedule, with a \textit{rate} value of $0.99$ multiplied by the previous learning rate at the end of each iteration. As the optimization procedure must be performed for large number of iterations for smaller values of $\lambda$, we cap the minimum learning rate to be a dynamic variable \textit{min\_lr}, whose initial value is determined by observing the loss curve for the first 10 epochs. We compute the objective function's value every epoch, and maintain a history of the past three values. If we find that the loss has not decreased in the past three epochs, we halve \textit{min\_lr}. This causes a dynamic reduction of the current learning rate which attempts to use finer learning rate if stagnation occurs. 
+
+We opt to break out of the optimization loop if the loss value is lesser than a certain \textit{threshold}, which is determined by observing the loss value over a predetermined number of epochs over the entire dataset.
+
+We observe that SGD + Momentum is very sensitive to the choice of the initial learning rate and the schedule which updates it. More so than any other choice of $\gamma$ for momentum, or whether we chose to use Nesterov Momentum or not, the key hyperparameter was learning rate. Next to this, choosing an appropriate learning rate schedule was highly important as well. Choosing an exponential decay factor too high caused divergence, and very low factors caused very slow learning.
+
+{\bf S2.2 Adam \& AMSGrad}
+
+We utilize the Adam optimizer with the \textit{AMSGrad} correction from the paper \href{https://openreview.net/forum?id=ryQu7f-RZ}{\textit{On the Convergence of Adam and Beyond}}. We opt to use the default hyperparameters of Adam, mainly $\beta_1 = 0.9, \beta_2 = 0.999, \epsilon = 1e{-8}$, having searched for different combinations of $\beta_2$ to improve convergence speed.
+
+For the learning rate decay schedule, we use a cyclic learning rate schedule, with a linear triangular waveform determining the increase and decrease of the base learning rate. For the cyclic learning rate function, we determine an appropriate value of \textit{stepsize, minimum learning rate and maximum learning rate} that is chosen via careful observation of the loss plot in the first 20 epochs. We still follow the learning rate decay pattern as SGD + Momentum, and also cap the learning rates to a dynamic minimum and maximum value for the cyclic learning rate, using the same methodology as used in SGD.
+
+We opt to break out of the optimization loop if the loss value is lesser than a certain \textit{threshold}, which is determined by observing the loss value over a predetermined number of epochs over the entire dataset.
+
+We observed that choosing an appropriate learning rate for Adam was much less of an issue as compared to SGD, and the cyclic learning rate schedule allowed for faster optimization overall compared to SGD in some cases. We attempted to use different values of $\beta_2 = {0.99, 0.999}$ and found that even though we use AMSGrad stabilization, there was no marked improvement in the overall convergence speed or value over Adam in the beginning of training. It is only near the end, that AMSGrad's stability is beneficial, whereas Adam rapidly fluctuates as it reaches close to the global minima. 
 
 {\bf Question S3.}
 Fix the value of $\lambda$ to what you used in {\bf Question P3},
