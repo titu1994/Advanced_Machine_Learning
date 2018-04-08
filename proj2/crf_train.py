@@ -1,5 +1,5 @@
 import numpy as np
-from proj2.utils import save_params
+from proj2.utils import save_params, save_losses, remove_file
 
 """
 Gradient Computation
@@ -106,6 +106,25 @@ def gradient_word(X, y, w, t, word_num):
     return np.concatenate((wy_grad, t_grad))
 
 
+def gradient_word_mcmc(X, y, w, t, word_num):
+    indices = np.arange(len(X[word_num]), dtype=int)
+    index = int(np.random.choice(indices, size=1))
+
+    sampled_word = X[word_num][index]
+    sampled_labels = y[word_num][index]
+
+    sampled_word = np.array([sampled_word])
+    sampled_labels = np.array([sampled_labels])
+
+    w_x = np.inner(sampled_word, w)
+    f_mess = forward_propogate(w_x, t)
+    b_mess = back_propogate(w_x, t)
+    den = denominator(f_mess, w_x)
+    wy_grad = grad_wrt_wy(sampled_word, sampled_labels, w_x, t, f_mess, b_mess, den)
+    t_grad = grad_wrt_t(sampled_labels, w_x, t, f_mess, b_mess, den)
+    return np.concatenate((wy_grad, t_grad))
+
+
 def gradient_avg(params, X, y, up_to_index):
     w = matricize_W(params)
     t = matricize_Tij(params)
@@ -168,6 +187,14 @@ def grad_func_word(params, X_train, y_train, word_num, l):
     return - grad_avg + l * grad_reg
 
 
+def grad_func_word_mcmc(params, X_train, y_train, word_num, l):
+    w = matricize_W(params)
+    t = matricize_Tij(params)
+    grad_avg = gradient_word_mcmc(X_train, y_train, w, t, word_num)
+    grad_reg = params
+    return - grad_avg + l * grad_reg
+
+
 def print_gradient_average(params, X_train, y_train, lambd):
     avg_grad = grad_func(params, X_train, y_train, lambd)
 
@@ -181,13 +208,18 @@ class Callback(object):
         self.X = X_train
         self.y = y_train
 
-        self.filename = filename
+        self.filename = "results/" + filename
+        self.loss_filename = "results/" + filename[:-4] + "_f_evals.txt"
         self.lambd = lambd
         self.iters = 0
 
+        remove_file(self.filename)
+        remove_file(self.loss_filename)
+
     def callback_fn(self, params):
         print("Function value: ", end='')
-        print(func_to_minimize(params, self.X, self.y, self.lambd))
+        loss = func_to_minimize(params, self.X, self.y, self.lambd)
+        print(loss)
 
         print("Average gradient: ", end='')
         avg_grad = np.mean(grad_func(params, self.X, self.y, self.lambd) ** 2)
@@ -196,6 +228,7 @@ class Callback(object):
 
         self.iters += 1
         save_params(params, self.filename, self.iters)
+        save_losses(loss, self.loss_filename, self.iters)
 
 
     def callback_fn_return_avg_grad(self, params):

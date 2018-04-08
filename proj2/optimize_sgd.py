@@ -97,7 +97,7 @@ if __name__ == '__main__':
     X_train, y_train = prepare_dataset("train_sgd.txt")
     X_test, y_test = prepare_dataset("test_sgd.txt")
 
-    LEARNING_RATES = [1e-2, 5e-3, 1e-2]
+    LEARNING_RATES = [1e-2, 1e-2, 1e-2]
     LAMBDAS = [1e-2, 1e-4, 1e-6]
     OPTIMIZATION_NAME = "SGD"
 
@@ -107,7 +107,6 @@ if __name__ == '__main__':
         params = np.zeros(129 * 26 + 26 ** 2)
         filepath = FILENAME_FMT % (OPTIMIZATION_NAME, lambd)
 
-        remove_file(filepath)
         callback = Callback(X_train, y_train, filepath, lambd)
 
         optimal_params = sgd_crf(X_train, y_train, params, lambd,

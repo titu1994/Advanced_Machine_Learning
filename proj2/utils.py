@@ -78,13 +78,17 @@ def remove_file(filename):
         os.remove(filename)
 
 
+def save_losses(loss, filename, iter):
+    with open(filename, "a") as f:
+        f.write("%d %f\n" % (iter, loss))
+
+
 def save_params(params, filename, iter):
-    with open(filename, "a") as text_file:
-        text_file.write("%d " % iter)
+    with open(filename, "a") as f:
+        f.write("%d " % iter)
         for p in params:
-            text_file.write("%f " % p)
-        text_file.write("\n")
-        text_file.close()
+            f.write("%f " % p)
+        f.write("\n")
 
 
 def compute_word_char_accuracy_score(y_preds, y_true):
