@@ -48,7 +48,8 @@ if __name__ == '__main__':
         y_pred = decode_crf(X_test, w, t)
         word_acc, char_acc = compute_word_char_accuracy_score(y_pred, y_test)
 
-        print("Train accuracies")
+        print("Test accuracies")
         print("Character accuracies :", char_acc)
         print("Word Accuracies :", word_acc)
 
+        print()
