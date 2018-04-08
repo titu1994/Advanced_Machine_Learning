@@ -67,7 +67,7 @@ if __name__ == '__main__':
     X_train, y_train = prepare_dataset("train_sgd.txt")
     X_test, y_test = prepare_dataset("test_sgd.txt")
 
-    LEARNING_RATES = [1e-2, 1e-3, 1e-3]
+    LEARNING_RATES = [1e-2, 1e-2, 1e-2]
     LAMBDAS = [1e-2, 1e-4, 1e-6]
     OPTIMIZATION_NAME = "ADAM"
 
