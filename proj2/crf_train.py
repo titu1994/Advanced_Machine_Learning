@@ -233,7 +233,8 @@ class Callback(object):
 
     def callback_fn_return_avg_grad(self, params):
         print("Function value: ", end='')
-        print(func_to_minimize(params, self.X, self.y, self.lambd))
+        loss = func_to_minimize(params, self.X, self.y, self.lambd)
+        print(loss)
 
         print("Average gradient: ", end='')
         avg_grad = np.mean(grad_func(params, self.X, self.y, self.lambd) ** 2)
@@ -242,5 +243,6 @@ class Callback(object):
 
         self.iters += 1
         save_params(params, self.filename, self.iters)
+        save_losses(loss, self.loss_filename, self.iters)
         return avg_grad
 
