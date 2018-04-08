@@ -231,7 +231,7 @@ class Callback(object):
         save_losses(loss, self.loss_filename, self.iters)
 
 
-    def callback_fn_return_avg_grad(self, params):
+    def callback_fn_return_vals(self, params):
         print("Function value: ", end='')
         loss = func_to_minimize(params, self.X, self.y, self.lambd)
         print(loss)
@@ -244,5 +244,4 @@ class Callback(object):
         self.iters += 1
         save_params(params, self.filename, self.iters)
         save_losses(loss, self.loss_filename, self.iters)
-        return avg_grad
-
+        return loss, avg_grad
