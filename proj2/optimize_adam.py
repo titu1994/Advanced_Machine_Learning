@@ -20,7 +20,7 @@ def get_cyclic_triangular_lr(iteration, stepsize, current_lr, max_lr):
 
 def adam_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100,
              beta1=0.9, beta2=0.999, epsilon=1e-8, tol=1e-6, min_lr=1e-3, cyclic_stepsize_mult=3.):
-
+    """ Uses the Adam optimizer with AMSGrad correction for convergence stability """
     num_words = len(X_train)
     max_lr = learning_rate
 
@@ -51,14 +51,14 @@ def adam_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoc
             M = beta1 * M + (1. - beta1) * gradient
             V = beta2 * V + (1. - beta2) * np.square(gradient)
 
-            # AMSGrad correction. It forces a non-increasing step size,
-            # a requirement for the proof of convergence.
+            # AMSGrad correction. It forces a non-increasing step size.
             V_hat = np.maximum(V_hat, V)
 
             # bias corrected first and second order moments
             m_t_hat = M / (1. - beta1 ** iteration)
             v_t_hat = V / (1. - beta2 ** iteration)
 
+            # get cyclic learning rate
             learning_rate = get_cyclic_triangular_lr(iteration, stepsize=num_words * cyclic_stepsize_mult,
                                                      current_lr=learning_rate, max_lr=max_lr)
 
@@ -109,12 +109,12 @@ if __name__ == '__main__':
     X_train, y_train = prepare_dataset("train_sgd.txt")
     X_test, y_test = prepare_dataset("test_sgd.txt")
 
-    LEARNING_RATES = [2e-2]# [5e-3, 1e-2, 2e-2]
-    LAMBDAS = [1e-4] #[1e-2, 1e-4, 1e-6]
-    TOLS = [1e-8] # [2e-6, 1e-8, 1e-8]
-    MIN_LRS = [1e-2] # [5e-3, 2e-2, 1e-2]
+    LEARNING_RATES = [5e-3] # [5e-3, 2e-2, 2e-2]
+    LAMBDAS = [1e-2] #[1e-2, 1e-4, 1e-6]
+    TOLS = [2e-6] # [2e-6, 1e-8, 1e-8]
+    MIN_LRS = [2e-3] # [5e-3, 1e-2, 1e-2]
     MAX_NUM_EPOCHS = [100] # [100, 100, 150]
-    CYCLIC_STEPSIZE_MULT = [0.5] # [3., 0.5, 3.]
+    CYCLIC_STEPSIZE_MULT = [0.5] # [0.5, 0.5, 3.]
 
     OPTIMIZATION_NAME = "ADAM"
 

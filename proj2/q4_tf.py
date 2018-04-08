@@ -12,7 +12,7 @@ from proj2.utils import save_losses, save_params
 
 RESTORE_CHECKPOINT = False
 C = 1
-LAMBDA = 1e-6
+LAMBDA = 1e-2
 
 train_dataset, test_dataset = load_dataset_as_dictionary()
 train_word_lengths = calculate_word_lengths_from_dictionary(train_dataset)
