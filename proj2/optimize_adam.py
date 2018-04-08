@@ -77,7 +77,6 @@ if __name__ == '__main__':
         params = np.zeros(129 * 26 + 26 ** 2)
         filepath = FILENAME_FMT % (OPTIMIZATION_NAME, lambd)
 
-        remove_file(filepath)
         callback = Callback(X_train, y_train, filepath, lambd)
 
         optimal_params = adam_crf(X_train, y_train, params, lambd,

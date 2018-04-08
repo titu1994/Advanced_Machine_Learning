@@ -1,5 +1,5 @@
 import numpy as np
-from proj2.utils import save_params
+from proj2.utils import save_params, save_losses, remove_file
 
 """
 Gradient Computation
@@ -208,13 +208,18 @@ class Callback(object):
         self.X = X_train
         self.y = y_train
 
-        self.filename = filename
+        self.filename = "results/" + filename
+        self.loss_filename = "results/" + filename[:-4] + "_f_evals.txt"
         self.lambd = lambd
         self.iters = 0
 
+        remove_file(self.filename)
+        remove_file(self.loss_filename)
+
     def callback_fn(self, params):
         print("Function value: ", end='')
-        print(func_to_minimize(params, self.X, self.y, self.lambd))
+        loss = func_to_minimize(params, self.X, self.y, self.lambd)
+        print(loss)
 
         print("Average gradient: ", end='')
         avg_grad = np.mean(grad_func(params, self.X, self.y, self.lambd) ** 2)
@@ -223,6 +228,7 @@ class Callback(object):
 
         self.iters += 1
         save_params(params, self.filename, self.iters)
+        save_losses(loss, self.loss_filename, self.iters)
 
 
     def callback_fn_return_avg_grad(self, params):
