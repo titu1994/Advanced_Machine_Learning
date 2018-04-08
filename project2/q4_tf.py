@@ -11,7 +11,7 @@ from project2.utils import load_dataset_as_dictionary, calculate_word_lengths_fr
 
 RESTORE_CHECKPOINT = False
 C = 1
-LAMBDA = 1e-6
+LAMBDA = 1e-2
 
 train_dataset, test_dataset = load_dataset_as_dictionary()
 train_word_lengths = calculate_word_lengths_from_dictionary(train_dataset)
@@ -34,6 +34,7 @@ num_features = X_train.shape[2]  # 128
 num_tags = 26  # 26
 
 t1 = time.time()
+
 
 with tf.Session() as sess:
     x_t = tf.constant(X_train, dtype=tf.float32, name='X_train')

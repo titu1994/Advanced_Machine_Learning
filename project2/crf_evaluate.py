@@ -1,43 +1,6 @@
 import numpy as np
 
 
-def run_value(trial_solution, X, w, t):
-    running_total = np.inner(X[0], w[trial_solution[0]])
-
-    for i in range(1, len(X)):
-        energy = np.inner(X[i], w[trial_solution[i]])
-        running_total += energy + t[trial_solution[i - 1]][trial_solution[i]]
-
-    return running_total
-
-
-def brute_force_algorithm(X, w, t):
-    stop_criterion = np.full((len(X),), 25, dtype=int).tolist()
-    run_solutions = np.zeros((len(X),), dtype=int).tolist()
-
-    # increment trial solution
-    best = run_value(run_solutions, X, w, t)
-    best_solution = run_solutions
-    while (True):
-        i = 0
-        while (True):
-            run_solutions[i] += 1
-            if (run_solutions[i] == 26):
-                run_solutions[i] = 0
-                i += 1
-            else:
-                break
-
-        trial_value = run_value(run_solutions, X, w, t)
-        if (trial_value > best):
-            best = trial_value
-            best_solution = np.copy(run_solutions)
-
-        if (run_solutions == stop_criterion):
-            break
-    return best, best_solution
-
-
 def get_energies(X, w, t):
     # for 100 letters I need an M matrix of 100  X 26
     M = np.zeros((len(X), 26))
