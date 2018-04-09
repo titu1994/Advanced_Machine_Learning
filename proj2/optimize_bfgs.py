@@ -22,7 +22,7 @@ if __name__ == '__main__':
     X_test, y_test = prepare_dataset("test_sgd.txt")
     params = np.zeros(129 * 26 + 26 ** 2)
 
-    LAMBDAS = [1e-4]
+    LAMBDAS = [1e-2, 1e-4, 1e-6]
     OPTIMIZATION_NAME = "BFGS"
 
     FILENAME_FMT = "%s_%s.txt"
