@@ -134,9 +134,14 @@ def gradient_word_mcmc(X, y, w, t, word_num, num_samples):
 def grad_wrt_wy_mcmc(X, y, w_x, t, f_mess, b_mess, den, sampled_indices, sampled_letters, sampled_labels):
     gradient = np.zeros((26, 129))
 
-    for i in range(len(sampled_letters)):
-        prior_dist = np.ones((26, 129)) * sampled_letters[i]
-        print(prior_dist)
+    gradient = np.zeros((26, 129))
+    for i in range(len(X)):
+        gradient[y[i]] += X[i]
+        # for each position subtract off the probability of the letter
+        temp = np.ones((26, 129)) * X[i]
+        temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
+        gradient -= temp.transpose()
+    return gradient.flatten()
     # gradient = np.zeros((26, 129))
     # for i in range(len(X)):
     #     gradient[y[i]] += X[i]

@@ -48,7 +48,7 @@ def adam_crf_mcmc(X_train, y_train, params, lambd, learning_rate, callback_fn, n
             learning_rate = max(learning_rate * 0.9, 5e-4)
 
             print("Epoch %d : " % (epoch), end='')
-            avg_grad = callback_fn(params)
+            loss_val, avg_grad = callback_fn(params)
 
             if avg_grad < 5e-6:
                 break
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         callback = Callback(X_train, y_train, filepath, lambd)
 
         optimal_params = adam_crf_mcmc(X_train, y_train, params, lambd,
-                                       lr, callback.callback_fn_return_vals(params),
+                                       lr, callback.callback_fn_return_vals,
                                        n_epoch=100, num_samples=3)
 
         w = matricize_W(optimal_params)
