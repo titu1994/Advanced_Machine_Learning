@@ -2,9 +2,9 @@ import time
 import numpy as np
 np.random.seed(0)
 
-from proj2.utils import *
-from proj2.crf_train import *
-from proj2.crf_evaluate import decode_crf
+from utils import prepare_dataset, compute_word_char_accuracy_score
+from crf_train import grad_func_word, matricize_W, matricize_Tij, Callback
+from crf_evaluate import decode_crf
 
 
 # computes a cyclic learning rate schedule, where after every "stepsize_mult" number of iterations,
