@@ -48,7 +48,7 @@ def adam_crf_mcmc(X_train, y_train, params, lambd, learning_rate, callback_fn, n
             learning_rate = max(learning_rate * 0.9, 5e-4)
 
             print("Epoch %d : " % (epoch), end='')
-            avg_grad = callback_fn(params)
+            loss_val, avg_grad = callback_fn(params)
 
             if avg_grad < 5e-6:
                 break
