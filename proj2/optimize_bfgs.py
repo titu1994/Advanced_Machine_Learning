@@ -2,9 +2,9 @@ import time
 import numpy as np
 from scipy.optimize import fmin_bfgs
 
-from proj2.utils import prepare_dataset, remove_file, compute_word_char_accuracy_score
-from proj2.crf_train import func_to_minimize, grad_func, matricize_W, matricize_Tij, Callback
-from proj2.crf_evaluate import decode_crf
+from utils import prepare_dataset, remove_file, compute_word_char_accuracy_score
+from crf_train import func_to_minimize, grad_func, matricize_W, matricize_Tij, Callback
+from crf_evaluate import decode_crf
 
 
 def optimize(params, X_train, y_train, lambd, callback_fn):
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     X_test, y_test = prepare_dataset("test_sgd.txt")
     params = np.zeros(129 * 26 + 26 ** 2)
 
-    LAMBDAS = [1e-2, 1e-4, 1e-6]
+    LAMBDAS = [1e-4]
     OPTIMIZATION_NAME = "BFGS"
 
     FILENAME_FMT = "%s_%s.txt"
