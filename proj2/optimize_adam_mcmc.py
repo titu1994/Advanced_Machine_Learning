@@ -93,7 +93,7 @@ if __name__ == '__main__':
         callback = Callback(X_train, y_train, filepath, lambd)
 
         optimal_params = adam_crf_mcmc(X_train, y_train, params, lambd,
-                                       lr, callback.callback_fn_return_avg_grad,
+                                       lr, callback.callback_fn_return_vals(params),
                                        n_epoch=100, num_samples=3)
 
         w = matricize_W(optimal_params)
