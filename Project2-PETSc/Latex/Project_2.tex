@@ -814,6 +814,7 @@ Recall that we now use 129 features, so we can't directly copy the result from P
 Also note that the LBFGS solver implemented in PETSc/Matlab/Python can be different,
 so they can be different in many aspects although the optimal objective value should be close.
 
+\rule{\paperwidth}{0.6pt}
 {\bf Answer P1.}
 The first eleven lines (10 iterations) of the output as well as the last line when it converges:
 \begin{verbatim}
@@ -849,6 +850,7 @@ Does a larger value of $\lambda$ allow the optimization to converge faster in CP
 or a smaller value of $\lambda$?  Why?
 Hint: the solver is quasi-Newton (like LBFGS).
 
+\rule{\paperwidth}{0.6pt}
 {\bf Answer P2.} A larger value of $\lambda$ constrains the objective function due to its behavior as a regularizer, therefore, as $\lambda$ increases, the constraints on the possible solutions increases. Due to the use of line search in LBFGS, a more constrained problem requires a fewer number of function evaluations. Therefore, the optimizer converges on the solution faster.
 
 \begin{figure}[t]
@@ -877,6 +879,7 @@ What can be observed from these plots?
 In addition, compare these plots with those in Question P2.
 Does training/test error keep decreasing as the objective function is being reduced?
 
+\rule{\paperwidth}{0.6pt}
 {\bf Answer P3.} One main observation is that the margin between the training/test Word-wise error is much larger than the margin between the training/test Letter-wise error. When compared to the plots in P2, we can see that as the objective function value decreases, the training/test error keeps decreasing till an extent. The errors do not decrease after a certain point and just hover around a value. The decrease in training/test error and function value is quite correlated to an extent.
 
 \begin{figure}[t]
@@ -942,6 +945,7 @@ When $r$ is small, it will take longer, and you may relax the tolerance to ``\ve
 Based on the plot, what conclusion can be drawn?
 If the curve is not linear, explain why.
 
+\rule{\paperwidth}{0.6pt}
 {\bf Answer P4.} Based on the plot, one can deduce the curve is not linear. This indicates that the speedup with respect to the \textit{\# of cores} and \textit{speedup factor} is \textbf{sublinear speedup}. This observation is common and expected. The speedup is NOT linear because of factors such as \textit{overhead} and \textit{contention for resources}. If there were none, we could expect a \textbf{linear speedup}. If we have the case:
 
 $$S(p) = \frac{T_{s}}{T_{par}(p)}$$
@@ -962,6 +966,7 @@ Do we really need to store the whole $\Ctr$ matrix in memory (cf. \eqref{eq:trai
 If yes, explain why.
 If no, explain how this can be saved and how the computational performance will be impacted.
 
+\rule{\paperwidth}{0.6pt}
 {\bf Answer P5.} The answer is \textbf{yes}, we need to store the whole $\Ctr$ matrix in memory (cf. \eqref{eq:train_collect}) via storing $\cvec_{\text{local}}$ over all processes (cf. \eqref{eq:def_c_local}). This restriction is placed because when calculating $\cvec_{\text{local}}$, we cannot scatter the values over all workers as we need to sequentially perform the gradient calculation depending on the value from the previous word.
 
 \section{Comparison with Stochastic Optimization}
@@ -1023,7 +1028,7 @@ What conclusion can be drawn from these figures?
 \label{fig:compare_sgd}
 \end{figure}
 
-
+\rule{\paperwidth}{0.6pt}
 {\bf Answer S1.}
 %
 
@@ -1042,6 +1047,7 @@ You do not need to be exhaustive, and just briefly describe what you tried and w
 {\bf Answer S2.}
 %
 
+\rule{\paperwidth}{0.6pt}
 {\bf S2.1 Stochastic Gradient Descent with Nesterov Momentum}
 
 We utilize Nesterov Momentum with Stochastic Gradient Descent to increase the speed of convergence on all of our models, with the default \textit{momentum} hyperparameter value of $\gamma$ to be \textit{0.9}. 
@@ -1052,6 +1058,7 @@ We opt to break out of the optimization loop if the loss value is lesser than a 
 
 We observe that SGD + Momentum is very sensitive to the choice of the initial learning rate and the schedule which updates it. More so than any other choice of $\gamma$ for momentum, or whether we chose to use Nesterov Momentum or not, the key hyperparameter was learning rate. Next to this, choosing an appropriate learning rate schedule was highly important as well. Choosing an exponential decay factor too high caused divergence, and very low factors caused very slow learning.
 
+\rule{\paperwidth}{0.6pt}
 {\bf S2.2 Adam \& AMSGrad}
 
 We utilize the Adam optimizer with the \textit{AMSGrad} correction from the paper \href{https://openreview.net/forum?id=ryQu7f-RZ}{\textit{On the Convergence of Adam and Beyond}}. We opt to use the default hyperparameters of Adam, mainly $\beta_1 = 0.9, \beta_2 = 0.999, \epsilon = 1e{-8}$, having searched for different combinations of $\beta_2$ to improve convergence speed.
