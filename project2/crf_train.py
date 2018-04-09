@@ -99,7 +99,7 @@ def compute_gradient_wrt_Wy(X, y, w, t, alpha, beta, denominator):
     return gradient.flatten()
 
 
-# def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
+# def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, compute_denominator):
 #     gradient = np.zeros(26 * 26)
 #     w_x = np.dot(x,w.T)
 #
@@ -110,7 +110,7 @@ def compute_gradient_wrt_Wy(X, y, w, t, alpha, beta, denominator):
 #             gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i])
 #
 #     # normalize the gradient
-#     gradient /= np.exp(denominator)
+#     gradient /= np.exp(compute_denominator)
 #
 #     # add the gradient for the next word
 #     for i in range(len(w_x) - 1):
@@ -135,7 +135,7 @@ def compute_gradient_wrt_Tij(y, x, w, t, alpha, beta, denominator):
     gradient = gradient.flatten()
 
     # normalize the gradient
-    #gradient /= np.exp(denominator)
+    #gradient /= np.exp(compute_denominator)
 
     # add the gradient for the next word
     for i in range(len(w_x) - 1):

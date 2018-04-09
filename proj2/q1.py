@@ -1,6 +1,6 @@
 import numpy as np
 from proj2.utils import *
-from proj2.crf_train import func_to_minimize
+from proj2.crf_train import objective_function
 
 def print_function_values(infile, outfile, X_train, y_train, lambd):
     lines = []
@@ -15,7 +15,7 @@ def print_function_values(infile, outfile, X_train, y_train, lambd):
         split = line.split()
         print(split[0] + ": ", end = '')
         params = np.array(split[1:]).astype(np.float)
-        val = func_to_minimize(params, X_train, y_train, lambd)
+        val = objective_function(params, X_train, y_train, lambd)
         print(val)
         f_vals.append(str(val) + "\n")
 

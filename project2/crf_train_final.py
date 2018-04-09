@@ -40,7 +40,7 @@ def compute_backward_message(w_x, t):
 
 
 def compute_numerator(w_x, y, t):
-    # full numerator for an entire word
+    # full compute_numerator for an entire word
     total = 0
     # go through whole word
     for i in range(len(w_x)):
@@ -94,7 +94,7 @@ def compute_gradient_wrt_Tij(w_x, y, t, alpha, beta, denominator):
         for j in range(26):
             gradient[j * 26: (j + 1) * 26] -= np.exp(w_x[i] + t.transpose()[j] + w_x[i + 1][j] + beta[i + 1][j] + alpha[i] - denominator)
 
-    #gradient /= denominator
+    #gradient /= compute_denominator
 
     for i in range(len(w_x) - 1):
         t_index = y[i]

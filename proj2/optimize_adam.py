@@ -2,9 +2,9 @@ import time
 import numpy as np
 np.random.seed(0)
 
-from utils import prepare_dataset, compute_word_char_accuracy_score
-from crf_train import grad_func_word, matricize_W, matricize_Tij, Callback
-from crf_evaluate import decode_crf
+from proj2.utils import prepare_dataset, compute_word_char_accuracy_score
+from proj2.crf_train import d_optimization_function_per_word, matricize_W, matricize_Tij, Callback
+from proj2.crf_evaluate import decode_crf
 
 
 # computes a cyclic learning rate schedule, where after every "stepsize_mult" number of iterations,
@@ -45,7 +45,7 @@ def adam_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoc
 
         for id in ids:
             # calculate gradient with respect to a randomly selected word
-            gradient = grad_func_word(params, X_train, y_train, id, lambd)
+            gradient = d_optimization_function_per_word(params, X_train, y_train, id, lambd)
 
             # bias correction
             M = beta1 * M + (1. - beta1) * gradient

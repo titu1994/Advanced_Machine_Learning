@@ -2,9 +2,9 @@ import time
 import numpy as np
 np.random.seed(0)
 
-from utils import prepare_dataset, compute_word_char_accuracy_score
-from crf_train import grad_func_word, matricize_W, matricize_Tij, Callback
-from crf_evaluate import decode_crf
+from proj2.utils import prepare_dataset, compute_word_char_accuracy_score
+from proj2.crf_train import d_optimization_function_per_word, matricize_W, matricize_Tij, Callback
+from proj2.crf_evaluate import decode_crf
 
 
 def sgd_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100, tol=1e-6,
@@ -33,7 +33,7 @@ def sgd_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch
                 nesterov_params = params - learning_rate * moving_params
 
                 # calculate the gradient with respect to a randomly selected word using nesterov params
-                gradient = grad_func_word(nesterov_params, X_train, y_train, id, lambd)
+                gradient = d_optimization_function_per_word(nesterov_params, X_train, y_train, id, lambd)
 
                 # apply momentum update
                 moving_params = GAMMA * moving_params + (1. - GAMMA) * gradient
@@ -43,7 +43,7 @@ def sgd_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch
 
             else:
                 # calculate gradient with respect to a randomly selected word
-                gradient = grad_func_word(params, X_train, y_train, id, lambd)
+                gradient = d_optimization_function_per_word(params, X_train, y_train, id, lambd)
 
                 # apply momentum update
                 moving_params = GAMMA * moving_params + (1. - GAMMA) * gradient

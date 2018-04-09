@@ -1,9 +1,9 @@
 import numpy as np
 from multiprocess.pool import Pool
 
-from utils import compute_word_char_accuracy_score, prepare_dataset
-from crf_train import matricize_W, matricize_Tij
-from crf_evaluate import decode_crf
+from proj2.utils import compute_word_char_accuracy_score, prepare_dataset
+from proj2.crf_train import matricize_W, matricize_Tij
+from proj2.crf_evaluate import decode_crf
 
 
 def process_line(data):

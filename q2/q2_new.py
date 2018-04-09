@@ -42,7 +42,7 @@ def backward_pass(Xword, Wj, Tij):  # calculate beta(j, s)
     return Xword_beta  # return beta values for j=m-1..0 for XW
 
 
-def psi_fn(Xword, y, Tij):  # psi_fn (numerator) for calculating likelihood value
+def psi_fn(Xword, y, Tij):  # psi_fn (compute_numerator) for calculating likelihood value
     final = 0
     for j in range(len(Xword)):
         if j > 0:
@@ -50,7 +50,7 @@ def psi_fn(Xword, y, Tij):  # psi_fn (numerator) for calculating likelihood valu
     return np.exp(final)
 
 
-def partition_fn(Xword, alpha):  # Z (denominator) that normalizes psi_fn
+def partition_fn(Xword, alpha):  # Z (compute_denominator) that normalizes psi_fn
     return np.sum(np.exp(alpha[-1] + Xword[-1]))
 
 
