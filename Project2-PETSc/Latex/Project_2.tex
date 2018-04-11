@@ -1044,10 +1044,10 @@ In addition, we also observe cases where SGD does worse than Adam, especially in
 What is your general experience of tuning the parameters of the solvers in {\bf Question S1}?
 You do not need to be exhaustive, and just briefly describe what you tried and what you found.
 
+\rule{\paperwidth}{0.6pt}
 {\bf Answer S2.}
 %
 
-\rule{\paperwidth}{0.6pt}
 {\bf S2.1 Stochastic Gradient Descent with Nesterov Momentum}
 
 We utilize Nesterov Momentum with Stochastic Gradient Descent to increase the speed of convergence on all of our models, with the default \textit{momentum} hyperparameter value of $\gamma$ to be \textit{0.9}. 
@@ -1058,7 +1058,6 @@ We opt to break out of the optimization loop if the loss value is lesser than a 
 
 We observe that SGD + Momentum is very sensitive to the choice of the initial learning rate and the schedule which updates it. More so than any other choice of $\gamma$ for momentum, or whether we chose to use Nesterov Momentum or not, the key hyperparameter was learning rate. Next to this, choosing an appropriate learning rate schedule was highly important as well. Choosing an exponential decay factor too high caused divergence, and very low factors caused very slow learning.
 
-\rule{\paperwidth}{0.6pt}
 {\bf S2.2 Adam \& AMSGrad}
 
 We utilize the Adam optimizer with the \textit{AMSGrad} correction from the paper \href{https://openreview.net/forum?id=ryQu7f-RZ}{\textit{On the Convergence of Adam and Beyond}}. We opt to use the default hyperparameters of Adam, mainly $\beta_1 = 0.9, \beta_2 = 0.999, \epsilon = 1e{-8}$, having searched for different combinations of $\beta_2$ to improve convergence speed.
@@ -1107,5 +1106,45 @@ You need to properly choose the exact number for ``low", ``medium", and ``high" 
 How should we change the definition of ``number of effective pass" to account for the number of samples?
 For a randomly sampled word with $m$ characters, 
 let us think of the message-passing based exact inference as drawing $m$ samples.
+
+\section{Appendix}
+
+When plotting the comparison between LBFGS, SGD, and ADAM over $\lambda \in \{${\sf 1e-2, 1e-4, 1e-6}\}, we lose the illustrative difference between Adam and SGD due to the scale issue introduced by including the LBFGS curve. Therefore, we have included the following graphs where we have separated Adam \& SGD into one graph and LBFGS into another for all three $\lambda$ values.
+
+\begin{figure}[!htb]
+\centering
+\subfigure[$\lambda =$ {\sf 1e-2}]{
+\includegraphics[width=5cm]{s1-a2}}
+~~
+\subfigure[$\lambda =$ {\sf 1e-4}]{
+\includegraphics[width=5cm]{s1-a3}}
+~~
+\caption{Comparison of LBFGS vs SGD and ADAM for $\lambda \in \{${\sf 1e-2}\}.}
+\label{fig:compare_sgd}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\subfigure[$\lambda =$ {\sf 1e-2}]{
+\includegraphics[width=5cm]{s1-b2}}
+~~
+\subfigure[$\lambda =$ {\sf 1e-4}]{
+\includegraphics[width=5cm]{s1-b3}}
+~~
+\caption{Comparison of LBFGS vs SGD and ADAM for $\lambda \in \{${\sf 1e-4}\}.}
+\label{fig:compare_sgd}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\subfigure[$\lambda =$ {\sf 1e-2}]{
+\includegraphics[width=5cm]{s1-c2}}
+~~
+\subfigure[$\lambda =$ {\sf 1e-4}]{
+\includegraphics[width=5cm]{s1-c3}}
+~~
+\caption{Comparison of LBFGS vs SGD and ADAM for $\lambda \in \{${\sf 1e-6}\}.}
+\label{fig:compare_sgd}
+\end{figure}
 
 \end{document}

@@ -116,6 +116,7 @@ def gradient_word_mcmc(X, y, w, t, word_num, num_samples):
     sampled_letters = []
     sampled_labels = []
     sampled_indices = []
+
     for i in range(num_samples):
         indices = np.arange(len(X[word_num]), dtype=int)
         index = int(np.random.choice(indices, size=1))
@@ -139,37 +140,12 @@ def gradient_word_mcmc(X, y, w, t, word_num, num_samples):
 
 def grad_wrt_wy_mcmc(X, y, w_x, t, f_mess, b_mess, den, sampled_indices, sampled_letters, sampled_labels):
     gradient = np.zeros((26, 129))
-
-    gradient = np.zeros((26, 129))
     for i in range(len(X)):
         gradient[y[i]] += X[i]
         # for each position subtract off the probability of the letter
         temp = np.ones((26, 129)) * X[i]
         temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
         gradient -= temp.transpose()
-    return gradient.flatten()
-    # gradient = np.zeros((26, 129))
-    # for i in range(len(X)):
-    #     gradient[y[i]] += X[i]
-    #     # for each position subtract off the probability of the letter
-    #     temp = np.ones((26, 129)) * X[i]
-    #     temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
-    #     gradient -= temp.transpose()
-    # return gradient.flatten()
-
-    # for i in range(len(sampled_indices)):
-    #     temp = np.ones((26, 129)) * sampled_letters[i]
-    #     for j in range(26):
-    #         gradient[j] += sampled_letters[i]
-    #         # temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
-    #         t = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
-    #         print(t.shape)
-    #         print(temp.shape)
-    #         temp *= t.transpose()
-    #         # temp = temp.transpose() * np.exp(f_mess[i] + b_mess[i] + w_x[i]) / den
-    #         # fix this
-    #     gradient -= temp
-
     return gradient.flatten()
 
 

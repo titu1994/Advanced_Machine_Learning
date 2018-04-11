@@ -60,7 +60,7 @@ def adam_crf_mcmc(X_train, y_train, params, lambd, learning_rate, callback_fn, n
     print("Time taken : ", time.time() - t1)
 
     return params
-
+gradient = np.zeros((26, 129))
 
 def resolve_category(category):
     if category == 0:  # low
