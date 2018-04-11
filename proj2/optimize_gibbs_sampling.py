@@ -10,7 +10,7 @@ from proj2.utils import prepare_dataset, compute_word_char_accuracy_score
 class GibbsSample:
 
     def __init__(self, lambd, callback_fn):
-        self.theta = np.ones(129 * 26 + 26 ** 2)
+        self.theta = np.zeros(129 * 26 + 26 ** 2)
         self.learning_rate = 0.01
         self.beta_1 = 0.9
         self.beta_2 = 0.999
@@ -38,29 +38,20 @@ class GibbsSample:
 
             #initialize a sum array with this sum value
 
+            for b in range(100):
+                for j in range(26):
 
-            # for b in range(100):
-            for j in range(26):
+                    if rand_char_index == 0:
+                        numerator[j] = np.inner(X_train[index][rand_char_index], w[j]) \
+                                       + t[j][sample[rand_char_index + 1]]
+                    elif rand_char_index == m - 1:
+                        numerator[j] = t[sample[rand_char_index - 1]][j] \
+                                       + np.inner(X_train[index][rand_char_index], w[j])
+                    else:
+                        numerator[j] = t[sample[rand_char_index - 1]][j] \
+                                       + np.inner(X_train[index][rand_char_index], w[j]) \
+                                       + t[j][sample[rand_char_index + 1]]
 
-
-                if rand_char_index == 0:
-                    numerator[j] = np.inner(X_train[index][rand_char_index], w[j]) \
-                                     + t[j][sample[rand_char_index+1]]
-
-                elif rand_char_index == m - 1:
-                    numerator[j] = t[sample[rand_char_index-1]][j]\
-                                     + np.inner(X_train[index][rand_char_index], w[j])
-
-                else:
-
-                    numerator[j] = t[sample[rand_char_index-1]][j]\
-                                     + np.inner(X_train[index][rand_char_index], w[j]) \
-                                     + t[j][sample[rand_char_index+1]]
-                #
-                # numerator[j - 1] = np.dot(w[init_y_sample[rand_char_index - 1]], X_train[index][rand_char_index - 1]) \
-                #                    + t[129 * 26 + 26 * (init_y_sample[rand_char_index - 1] - 1) + sample[j]] \
-                #                    + np.dot(w[j], X_train[index][rand_char_index]) \
-                #                    + t[129 * 26 + 26 * (sample[j] - 1) + sample[rand_char_index]]
             best_index = np.argmax(numerator)
             sample[rand_char_index] = best_index
 
@@ -79,7 +70,7 @@ class GibbsSample:
         v_t = 0  # second order moment
 
         # init params
-        theta = np.ones(129 * 26 + 26 ** 2)
+        theta = np.zeros(129 * 26 + 26 ** 2)
 
         # init gradient
         grad = np.ones_like(theta)

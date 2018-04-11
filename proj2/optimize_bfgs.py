@@ -31,8 +31,11 @@ if __name__ == '__main__':
         filepath = FILENAME_FMT % (OPTIMIZATION_NAME, lambd)
 
         remove_file(filepath)
+
+        # maintain a callback to measure loss and average gradient every epoch
         callback = Callback(X_train, y_train, filepath, lambd)
 
+        # train using BFGS
         optimal_params = optimize(params, X_train, y_train, lambd, callback.callback_fn)
 
         w = matricize_W(optimal_params)

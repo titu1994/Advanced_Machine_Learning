@@ -2,24 +2,24 @@ import numpy as np
 from proj2.utils import *
 from proj2.crf_train import objective_function
 
-def print_function_values(infile, outfile, X_train, y_train, lambd):
-    lines = []
+def save_optimization_scores(weight_file, output_filename, X_train, y_train, lambd):
     f_vals = []
-    # just to keep the file open for as short a time as possible
-    file = open(infile, 'r')
-    for line in file:
-        lines.append(line)
+    file = open(weight_file, 'r')
+    lines = file.readlines()
     file.close()
 
-    for line in lines:
-        split = line.split()
-        print(split[0] + ": ", end = '')
-        params = np.array(split[1:]).astype(np.float)
+    for i, line in enumerate(lines):
+        splits = line.split()
+        print(i, splits[0] + ": ", end = '')
+
+        params = np.array(splits[1:]).astype(np.float)
+
         val = objective_function(params, X_train, y_train, lambd)
+
         print(val)
         f_vals.append(str(val) + "\n")
 
-    file = open(outfile, 'w')
+    file = open(output_filename, 'w')
     file.writelines(f_vals)
     file.close()
 
@@ -37,6 +37,6 @@ if __name__ == '__main__':
             loss_path = "results/%s_%s_f_evals.txt" % (optm, lambd)
 
             print("Printing data from optimizer %s with lambda %s" % (optm, lambd))
-            print_function_values(param_path, loss_path, X_train, y_train, lambd)
+            save_optimization_scores(param_path, loss_path, X_train, y_train, lambd)
 
             print()

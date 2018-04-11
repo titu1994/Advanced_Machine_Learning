@@ -6,8 +6,8 @@ from proj2.crf_train import matricize_W, matricize_Tij
 from proj2.crf_evaluate import decode_crf
 
 
-def process_line(data):
-    line, i, X_test, y_test = data
+def process_line(packed_line):
+    line, i, X_test, y_test = packed_line
 
     split = line.split()
     params = np.array(split[1:]).astype(np.float)
@@ -21,18 +21,17 @@ def process_line(data):
 
     return (1. - word_acc)
 
-def save_word_error(infile, outfile, X_test, y_test, l):
-    lines = []
+
+def save_word_error(result_file, output_file, X_test, y_test):
     f_vals = []
-    # just to keep the file open for as short a time as possible
-    file = open(infile, 'r')
-    for line in file:
-        lines.append(line)
+
+    file = open(result_file, 'r')
+    lines = file.readlines()
     file.close()
 
     for i, line in enumerate(lines):
         split = line.split()
-        print(str(i) + ": ", end='')
+        print(i, ": ", end='')
         params = np.array(split[1:]).astype(np.float)
         w = matricize_W(params)
         t = matricize_Tij(params)
@@ -44,31 +43,29 @@ def save_word_error(infile, outfile, X_test, y_test, l):
         # only word accuracy so just accuracy[0]
         f_vals.append(str(1 - word_acc) + "\n")
 
-    file = open(outfile, 'w')
+    file = open(output_file, 'w')
     file.writelines(f_vals)
     file.close()
 
 
-def save_word_error_parallel(infile, outfile, X_test, y_test, l):
-    lines = []
-    # just to keep the file open for as short a time as possible
-    file = open(infile, 'r')
-    for line in file:
-        lines.append(line)
+def save_word_error_parallel(results_file, output_file, X_test, y_test):
+    file = open(results_file, 'r')
+    lines = file.readlines()
     file.close()
 
-    pool = Pool(4)
+    pool = Pool(4)  # uses up 4 cores per call (for 8 core machine), so change this to match half your cpu count
     f_vals = []
 
     data = [(l, i, X_test, y_test) for i, l in enumerate(lines)]
-    accuracies = pool.imap(process_line, data)
+    accuracies = pool.imap(process_line, data)  # maintains order when processing in parallel
 
+    # wait while processing the data
     pool.close()
 
     for acc in accuracies:
         f_vals.append(str(acc) + "\n")
 
-    file = open(outfile, 'w')
+    file = open(output_file, 'w')
     file.writelines(f_vals)
     file.close()
 
@@ -86,5 +83,10 @@ if __name__ == '__main__':
             loss_path = "results/%s_%s_word_error.txt" % (optm, lambd)
 
             print("Getting word accuracy data from optimizer %s with lambda %s" % (optm, lambd))
-            save_word_error_parallel(param_path, loss_path, X_test, y_test, lambd)
+
+            # sequential processing, takes a lot of time
+            # save_word_error(param_path, loss_path, X_test, y_test)
+
+            # parallel processing, takes a lot of memory
+            save_word_error_parallel(param_path, loss_path, X_test, y_test)
 

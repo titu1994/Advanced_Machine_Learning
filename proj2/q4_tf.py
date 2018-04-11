@@ -8,7 +8,6 @@ np.random.seed(0)
 tf.set_random_seed(0)
 
 from proj2.utils import load_dataset_as_dictionary, calculate_word_lengths_from_dictionary, prepare_dataset_from_dictionary
-from proj2.utils import save_losses, save_params
 
 RESTORE_CHECKPOINT = False
 C = 1

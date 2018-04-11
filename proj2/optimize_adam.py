@@ -109,12 +109,14 @@ if __name__ == '__main__':
     X_train, y_train = prepare_dataset("train_sgd.txt")
     X_test, y_test = prepare_dataset("test_sgd.txt")
 
-    LEARNING_RATES = [5e-3] # [5e-3, 2e-2, 2e-2]
-    LAMBDAS = [1e-2] #[1e-2, 1e-4, 1e-6]
-    TOLS = [2e-6] # [2e-6, 1e-8, 1e-8]
-    MIN_LRS = [2e-3] # [5e-3, 1e-2, 1e-2]
-    MAX_NUM_EPOCHS = [100] # [100, 100, 150]
-    CYCLIC_STEPSIZE_MULT = [0.5] # [0.5, 0.5, 3.]
+    # Hyperparameters
+    LEARNING_RATES = [5e-3, 2e-2, 2e-2]
+    LAMBDAS = [1e-2, 1e-4, 1e-6]
+
+    TOLS = [2e-6, 1e-8, 1e-8]  # Tolerance for mean gradient
+    MIN_LRS = [2e-3, 1e-2, 1e-2]  # minimum learning rate (in the beginning, this is adaptive)
+    MAX_NUM_EPOCHS = [100, 100, 150]  # maximum number of epochs to attempt convergence
+    CYCLIC_STEPSIZE_MULT = [0.5, 0.5, 3.]  # number of cycles per epoch. 0.5 := 2 cycles every epoch, 3 := 1 cycle every 3 epochs
 
     OPTIMIZATION_NAME = "ADAM"
 
@@ -125,6 +127,7 @@ if __name__ == '__main__':
         params = np.zeros(129 * 26 + 26 ** 2)
         filepath = FILENAME_FMT % (OPTIMIZATION_NAME, lambd)
 
+        # maintain a callback to measure loss and average gradient every epoch
         callback = Callback(X_train, y_train, filepath, lambd)
 
         optimal_params = adam_crf(X_train, y_train, params,

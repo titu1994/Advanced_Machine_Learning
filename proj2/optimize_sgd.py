@@ -7,8 +7,8 @@ from proj2.crf_train import d_optimization_function_per_word, matricize_W, matri
 from proj2.crf_evaluate import decode_crf
 
 
-def sgd_crf(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100, tol=1e-6,
-            nesterov=False, min_lr=5e-4):
+def train_sgd(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100, tol=1e-6,
+              nesterov=False, min_lr=5e-4):
     epoch = 0
     iteration = 0
 
@@ -87,11 +87,13 @@ if __name__ == '__main__':
     X_train, y_train = prepare_dataset("train_sgd.txt")
     X_test, y_test = prepare_dataset("test_sgd.txt")
 
+    # Hyperparameters
     LEARNING_RATES = [0.1, 0.2, 0.1]
     LAMBDAS = [1e-2, 1e-4, 1e-6]
-    TOLS = [2e-6, 1e-8, 1e-8]
-    MIN_LRS = [5e-3, 2e-2, 2e-2]
-    MAX_NUM_EPOCHS = [100, 100, 150]
+
+    TOLS = [2e-6, 1e-8, 1e-8]  # Tolerance for mean gradient
+    MIN_LRS = [5e-3, 2e-2, 2e-2]  # minimum learning rate (in the beginning, this is adaptive)
+    MAX_NUM_EPOCHS = [100, 100, 150]  # maximum number of epochs to attempt convergence
 
     OPTIMIZATION_NAME = "SGD"
 
@@ -101,13 +103,14 @@ if __name__ == '__main__':
         params = np.zeros(129 * 26 + 26 ** 2)
         filepath = FILENAME_FMT % (OPTIMIZATION_NAME, lambd)
 
+        # maintain a callback to measure loss and average gradient every epoch
         callback = Callback(X_train, y_train, filepath, lambd)
 
-        optimal_params = sgd_crf(X_train, y_train, params,
-                                 lambd=lambd,
-                                 learning_rate=lr,
-                                 callback_fn=callback.callback_fn_return_vals,
-                                 n_epoch=num_epochs, tol=tol, nesterov=True, min_lr=min_lr)
+        optimal_params = train_sgd(X_train, y_train, params,
+                                   lambd=lambd,
+                                   learning_rate=lr,
+                                   callback_fn=callback.callback_fn_return_vals,
+                                   n_epoch=num_epochs, tol=tol, nesterov=True, min_lr=min_lr)
 
         w = matricize_W(optimal_params)
         t = matricize_Tij(optimal_params)
