@@ -7,6 +7,11 @@ from proj2.crf_train import *
 from proj2.utils import prepare_dataset, compute_word_char_accuracy_score
 
 
+"""
+
+NOTE: THIS CODE DOES NOT CURRENTLY WORK
+
+"""
 class GibbsSample:
 
     def __init__(self, lambd, callback_fn):

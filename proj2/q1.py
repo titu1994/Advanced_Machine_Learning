@@ -1,6 +1,6 @@
 import numpy as np
-from proj2.utils import *
-from proj2.crf_train import objective_function
+from utils import *
+from crf_train import objective_function
 
 def save_optimization_scores(weight_file, output_filename, X_train, y_train, lambd):
     f_vals = []

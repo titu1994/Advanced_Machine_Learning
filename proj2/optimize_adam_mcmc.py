@@ -2,10 +2,15 @@ import time
 import numpy as np
 np.random.seed(0)
 
-from proj2.utils import *
-from proj2.crf_train import *
-from proj2.crf_evaluate import decode_crf
+from utils import *
+from crf_train import *
+from crf_evaluate import decode_crf
 
+"""
+
+NOTE : THIS CODE DOES NOT CURRENTLY WORK
+
+"""
 def adam_crf_mcmc(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100, num_samples=3,
                   beta1=0.9, beta2=0.999, epsilon=1e-8):
     epoch = 0

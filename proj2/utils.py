@@ -1,7 +1,7 @@
 import numpy as np
 import re
 import os
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 
 Q2_TRAIN_PATH = "data/train_sgd.txt"
 Q2_TEST_PATH = "data/test_sgd.txt"

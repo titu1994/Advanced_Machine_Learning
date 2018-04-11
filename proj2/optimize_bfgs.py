@@ -2,9 +2,9 @@ import time
 import numpy as np
 from scipy.optimize import fmin_bfgs
 
-from proj2.utils import prepare_dataset, remove_file, compute_word_char_accuracy_score
-from proj2.crf_train import objective_function, d_optimization_function, matricize_W, matricize_Tij, Callback
-from proj2.crf_evaluate import decode_crf
+from utils import prepare_dataset, remove_file, compute_word_char_accuracy_score
+from crf_train import objective_function, d_optimization_function, matricize_W, matricize_Tij, Callback
+from crf_evaluate import decode_crf
 
 
 def optimize(params, X_train, y_train, lambd, callback_fn):

@@ -2,9 +2,9 @@ import time
 import numpy as np
 np.random.seed(0)
 
-from proj2.utils import prepare_dataset, compute_word_char_accuracy_score
-from proj2.crf_train import d_optimization_function_per_word, matricize_W, matricize_Tij, Callback
-from proj2.crf_evaluate import decode_crf
+from utils import prepare_dataset, compute_word_char_accuracy_score
+from crf_train import d_optimization_function_per_word, matricize_W, matricize_Tij, Callback
+from crf_evaluate import decode_crf
 
 
 def train_sgd(X_train, y_train, params, lambd, learning_rate, callback_fn, n_epoch=100, tol=1e-6,

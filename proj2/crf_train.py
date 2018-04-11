@@ -1,5 +1,5 @@
 import numpy as np
-from proj2.utils import save_params, save_losses, remove_file
+from utils import save_params, save_losses, remove_file
 
 """
 Gradient Computation

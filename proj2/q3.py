@@ -1,9 +1,9 @@
 import numpy as np
 from multiprocess.pool import Pool
 
-from proj2.utils import compute_word_char_accuracy_score, prepare_dataset
-from proj2.crf_train import matricize_W, matricize_Tij
-from proj2.crf_evaluate import decode_crf
+from utils import compute_word_char_accuracy_score, prepare_dataset
+from crf_train import matricize_W, matricize_Tij
+from crf_evaluate import decode_crf
 
 
 def process_line(packed_line):
@@ -74,8 +74,8 @@ if __name__ == '__main__':
     X_train, y_train = prepare_dataset("train_sgd.txt")
     X_test, y_test = prepare_dataset("test_sgd.txt")
 
-    OPTIMIZERS = ['ADAM', 'SGD']
-    LAMBDAS = [1e-4]
+    OPTIMIZERS = ['BFGS', 'ADAM', 'SGD']
+    LAMBDAS = [1e-2, 1e-4, 1e-6]
 
     for optm in OPTIMIZERS:
         for lambd in LAMBDAS:

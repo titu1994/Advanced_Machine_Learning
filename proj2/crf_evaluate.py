@@ -52,6 +52,7 @@ def decode_crf_word(X, w, t):
     return np.array(solution)
 
 
+# helper method that predicts for entire dataset X
 def decode_crf(X, w, t):
     y_pred = []
     for i, x in enumerate(X):
