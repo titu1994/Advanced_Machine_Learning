@@ -334,7 +334,7 @@ The meaning of the command line arguments are:
 \end{itemize}
 \vspace{-1em}
 
-A sample console printout is given in \verb!sample_out_IID.txt!.
+A sample_dataset console printout is given in \verb!sample_out_IID.txt!.
 To switch to CRF training AFTER completing your implementation,
 just change the last \verb!IID! into \verb!CRF!.
 The code currently dumps the following performance metrics to STDOUT at each iteration:
@@ -752,7 +752,7 @@ Just check how the three timers are used in \verb!seq_train.cpp!
 TAO can be terminated in many different ways, and users can set it easily.
 For example, reaching the maximum number of iterations or function evaluation,
 falling below some threshold of gradient norm or step size.
-See \verb!seq_train.cpp! for some sample usage.
+See \verb!seq_train.cpp! for some sample_dataset usage.
 
 In very rare cases, the program crashes with strange runtime errors (e.g. returning \verb!nan!).
 Then try a clean re-compiling by ``\verb!make clean!" followed by ``\verb!make!".
@@ -1088,9 +1088,9 @@ What conclusions can be drawn from the plot?
 \rule{\paperwidth}{0.6pt}
 {\bf Answer S3}
 
-The primary observation is the sample wise efficiency of both stochastic optimization algorithms during training. Both SGD and ADAM quickly minimize the objective function using gradients from individual training examples, such that within one epoch, they are able to obtain a much lower word error as compared to LBFGS which performs a single update using average of the gradients over an entire training set.
+The primary observation is the sample_dataset wise efficiency of both stochastic optimization algorithms during training. Both SGD and ADAM quickly minimize the objective function using gradients from individual training examples, such that within one epoch, they are able to obtain a much lower word error as compared to LBFGS which performs a single update using average of the gradients over an entire training set.
 
-We can also see that ADAM and SGD both converge near the same global optima in approximately 60 epochs, whereas the actual global minima is reached by LBFGS after approximately 150 epochs of training. Roughly, this corresponds to a sample efficiency ratio of 2.5 for the stochastic optimizers over the LBFGS optimizer.
+We can also see that ADAM and SGD both converge near the same global optima in approximately 60 epochs, whereas the actual global minima is reached by LBFGS after approximately 150 epochs of training. Roughly, this corresponds to a sample_dataset efficiency ratio of 2.5 for the stochastic optimizers over the LBFGS optimizer.
 
 {\bf Extra credit [15 pt].} 
 In SGD and ADAM, although considerable computational savings have been achieved by using stochastic gradient based on a single randomly sampled word,

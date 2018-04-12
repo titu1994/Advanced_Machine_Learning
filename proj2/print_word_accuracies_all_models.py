@@ -48,9 +48,9 @@ if __name__ == '__main__':
 
     for result in result_list:
         result_holder, model, lambd = result
-        result = next(result_holder)
+        word_error = next(result_holder)
 
-        print("Optimizer = %s | Lambda = %0.6f | Word Accuracy = %f" % (model, lambd, result))
+        print("Optimizer = %s | Lambda = %0.6f | Word Accuracy = %f" % (model, lambd, 1. - word_error))
 
     print()
     print("Time taken : ", time.time() - t1, "seconds")
