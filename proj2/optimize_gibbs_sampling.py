@@ -20,7 +20,7 @@ class GibbsSample:
         self.beta_1 = 0.9
         self.beta_2 = 0.999
         self.epsilon = 1e-8
-        self.iterations = None # 3700
+        self.iterations = 37000 # 3700
         self.lambda_param = lambd
         self.callback_fn = callback_fn
 
@@ -43,19 +43,21 @@ class GibbsSample:
 
             #initialize a sum array with this sum value
 
-            for b in range(100):
-                for j in range(26):
+            #for _ in range(100):
+            for j in range(26):
 
                     if rand_char_index == 0:
-                        numerator[j] = np.inner(X_train[index][rand_char_index], w[j]) \
+                        numerator[j] = 100 * np.inner(X_train[index][rand_char_index], w[j]) \
                                        + t[j][sample[rand_char_index + 1]]
                     elif rand_char_index == m - 1:
-                        numerator[j] = t[sample[rand_char_index - 1]][j] \
+                        numerator[j] = 100 * t[sample[rand_char_index - 1]][j] \
                                        + np.inner(X_train[index][rand_char_index], w[j])
                     else:
-                        numerator[j] = t[sample[rand_char_index - 1]][j] \
+                        numerator[j] = 100 * t[sample[rand_char_index - 1]][j] \
                                        + np.inner(X_train[index][rand_char_index], w[j]) \
                                        + t[j][sample[rand_char_index + 1]]
+
+
 
             best_index = np.argmax(numerator)
             sample[rand_char_index] = best_index
@@ -87,6 +89,7 @@ class GibbsSample:
             w = matricize_W(theta)
             t = matricize_Tij(theta)
             samples, sampled_word_index = self.generate_samples(X_train, w, t, 100)#theta[:3354], theta[3354:], 5)
+
             # calculate gradient
             x_train_array = []
             x_train_array.append(X_train[sampled_word_index])
@@ -109,13 +112,16 @@ class GibbsSample:
             # update params
             theta = theta_prev - (self.learning_rate * m_t_hat) / (np.sqrt(v_t_hat) + self.epsilon)
 
-            if iteration % len(X_train) == 0:
+            if (iteration % len(X_train)) == 0:
                 epoch += 1
                 print("Epoch %d : " % (epoch), end='')
                 loss_val, avg_grad = self.callback_fn(theta)
 
                 if avg_grad < 2e-6:
                     break
+
+
+            #print("Iteration %d: Parameters updated" % (iteration))
 
             #print(theta)
             # termination condition

@@ -83,7 +83,7 @@ def train_evaluate_linear_svm(C=1.0):
 
 # plot the scores
 def plot_scores(X_range, scale='log', xlabel='C'):
-    plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
+    plt.plot(X_range, CHAR_CV_SCORES, label='char-level result')
     plt.title('Character level accuracy')
     plt.legend()
     plt.xlabel(xlabel)
@@ -92,7 +92,7 @@ def plot_scores(X_range, scale='log', xlabel='C'):
     plt.ylabel('accuracy')
     plt.show()
 
-    plt.plot(X_range, WORD_CV_SCORES, label='word-level acc')
+    plt.plot(X_range, WORD_CV_SCORES, label='word-level result')
     plt.title('Word level accuracy')
     plt.legend()
     plt.xlabel(xlabel)

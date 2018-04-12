@@ -7,7 +7,7 @@ from crf_evaluate import decode_crf
 
 
 def process_line(packed_line):
-    line, i, X_test, y_test = packed_line
+    line, i, X_test, y_test, verbose = packed_line
 
     split = line.split()
     params = np.array(split[1:]).astype(np.float)
@@ -17,7 +17,9 @@ def process_line(packed_line):
     predictions = decode_crf(X_test, w, t)
 
     word_acc, char_acc = compute_word_char_accuracy_score(predictions, y_test)
-    print(str(i) + ": ", word_acc)
+
+    if verbose:
+        print(str(i) + ": ", word_acc)
 
     return (1. - word_acc)
 
@@ -56,7 +58,10 @@ def save_word_error_parallel(results_file, output_file, X_test, y_test):
     pool = Pool(4)  # uses up 4 cores per call (for 8 core machine), so change this to match half your cpu count
     f_vals = []
 
-    data = [(l, i, X_test, y_test) for i, l in enumerate(lines)]
+    # packs a tuple - line, index, X_test, y_test, verbose (should print or not)
+    data = [(l, i, X_test, y_test, True) for i, l in enumerate(lines)]
+
+    # process it in correct order
     accuracies = pool.imap(process_line, data)  # maintains order when processing in parallel
 
     # wait while processing the data

@@ -35,7 +35,7 @@ num_features = X_train.shape[2]  # 128
 num_tags = 26  # 26
 
 def plot_scores(X_range, scale='log', xlabel='C'):
-    plt.plot(X_range, CHAR_CV_SCORES, label='char-level acc')
+    plt.plot(X_range, CHAR_CV_SCORES, label='char-level result')
     plt.title('Character level accuracy')
     plt.legend()
     plt.xlabel(xlabel)
