@@ -50,7 +50,7 @@ if __name__ == '__main__':
         result_holder, model, lambd = result
         result = next(result_holder)
 
-        print("Model = %s | Lambda = %0.6f | Word Accuracy = %f" % (model, lambd, result))
+        print("Optimizer = %s | Lambda = %0.6f | Word Accuracy = %f" % (model, lambd, result))
 
     print()
     print("Time taken : ", time.time() - t1, "seconds")
