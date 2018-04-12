@@ -8,7 +8,7 @@ from utils import load_q1_dataset
 
 X, W, Tij = load_q1_dataset()
 
-num_examples = 1  # 1 sample
+num_examples = 1  # 1 sample_dataset
 num_words = X.shape[0]  # 100
 num_features = X.shape[1]  # 128
 num_tags = W.shape[0]  # 26

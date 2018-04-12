@@ -69,11 +69,11 @@ gradient = np.zeros((26, 129))
 
 def resolve_category(category):
     if category == 0:  # low
-        return 3
+        return 30
     elif category == 1:  # medium
-        return 6
+        return 60
     else:  # high
-        return 10
+        return 100
 
 
 if __name__ == '__main__':
