@@ -1107,6 +1107,11 @@ How should we change the definition of ``number of effective pass" to account fo
 For a randomly sampled word with $m$ characters, 
 let us think of the message-passing based exact inference as drawing $m$ samples.
 
+\rule{\paperwidth}{0.6pt}
+{\bf Answer}
+
+The definition of "number of effective passes" would change due to the introduction of sampling. In the previous case where exact inference in a linear-chain CRF was possible, the "number of effective passes" would accurately tell you the number of iterations the optimizer would converge on a function value. In the case of sampling, this definition would need to be changed to accommodate for the extra operation of sampling. Convergence would be slower (still converging around the actual minimum function value) and could be slightly erratic due to the nature of sampling. Sampling also includes the goal of estimating the posterior distribution which would take longer than exact inference.
+
 \section{Appendix}
 
 When plotting the comparison between LBFGS, SGD, and ADAM over $\lambda \in \{${\sf 1e-2, 1e-4, 1e-6}\}, we lose the illustrative difference between Adam and SGD due to the scale issue introduced by including the LBFGS curve. Therefore, we have included the following graphs where we have separated Adam \& SGD into one graph and LBFGS into another for all three $\lambda$ values.
